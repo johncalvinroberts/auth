@@ -204,7 +204,7 @@ declare module '@ioc:Adonis/Addons/Auth' {
     ) => Promise<InstanceType<T>>
   } & {
     new (): LucidRow & {
-      password?: string
+      password?: string | null
       rememberMeToken?: string | null
     }
   }
