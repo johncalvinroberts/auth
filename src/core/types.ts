@@ -10,7 +10,7 @@
 import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 
 import type { GuardUser } from './guard_user.js'
-import type { PROVIDER_REAL_USER } from './symbols.js'
+import type { PROVIDER_REAL_USER } from '../symbols.js'
 import { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 
 /**
@@ -52,6 +52,11 @@ export interface TokenContract {
    * Timestamp when the token was first persisted
    */
   createdAt: Date
+
+  /**
+   * Timestamp when the token was updated
+   */
+  updatedAt: Date
 
   /**
    * Timestamp when the token will expire

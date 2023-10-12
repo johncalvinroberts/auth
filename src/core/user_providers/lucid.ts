@@ -11,7 +11,7 @@ import { RuntimeException } from '@poppinss/utils'
 
 import debug from '../../debug.js'
 import { GuardUser } from '../guard_user.js'
-import { PROVIDER_REAL_USER } from '../symbols.js'
+import { PROVIDER_REAL_USER } from '../../symbols.js'
 import type {
   UserProviderContract,
   LucidAuthenticatable,

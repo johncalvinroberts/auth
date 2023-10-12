@@ -8,8 +8,7 @@
  */
 
 import { test } from '@japa/runner'
-import { setTimeout } from 'node:timers/promises'
-import { createDatabase, createTables } from '../../helpers.js'
+import { createDatabase, createTables, timeTravel } from '../../helpers.js'
 import { DatabaseTokenProviderFactory, TestToken } from '../../../factories/main.js'
 
 test.group('Database token provider | createToken', () => {
@@ -72,14 +71,14 @@ test.group('Database token provider | createToken', () => {
     const db = await createDatabase()
     await createTables(db)
 
-    const token = TestToken.create(1, '2sec')
+    const token = TestToken.create(1, '2 sec')
     const databaseProvider = new DatabaseTokenProviderFactory().create(db)
 
     await databaseProvider.createToken(token)
-    await setTimeout(3000)
+    timeTravel(3)
 
     assert.isNull(await databaseProvider.getTokenBySeries(token.series))
-  }).timeout(4000)
+  })
 
   test('update token hash and expiry', async ({ assert }) => {
     const db = await createDatabase()
@@ -93,7 +92,7 @@ test.group('Database token provider | createToken', () => {
     /**
      * Wait for the token expire
      */
-    await setTimeout(3000)
+    timeTravel(3)
     assert.isNull(await databaseProvider.getTokenBySeries(token.series))
 
     /**

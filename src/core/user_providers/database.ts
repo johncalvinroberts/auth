@@ -13,7 +13,7 @@ import type { Database } from '@adonisjs/lucid/database'
 
 import debug from '../../debug.js'
 import { GuardUser } from '../guard_user.js'
-import { PROVIDER_REAL_USER } from '../symbols.js'
+import { PROVIDER_REAL_USER } from '../../symbols.js'
 import type { DatabaseUserProviderOptions, UserProviderContract } from '../types.js'
 
 /**

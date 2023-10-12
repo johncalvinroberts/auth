@@ -42,6 +42,11 @@ export abstract class Token implements TokenContract {
    */
   createdAt: Date = new Date()
 
+  /**
+   * Date/time when the token was updated
+   */
+  updatedAt: Date = new Date()
+
   constructor(
     /**
      * Series is a random number stored inside the database as it is

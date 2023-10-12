@@ -12,3 +12,8 @@
  * user provider
  */
 export const PROVIDER_REAL_USER = Symbol.for('PROVIDER_REAL_USER')
+
+/**
+ * A symbol to identify the type for the events emitted by a guard
+ */
+export const GUARD_KNOWN_EVENTS = Symbol.for('GUARD_KNOWN_EVENTS')

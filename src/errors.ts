@@ -17,3 +17,12 @@ export const E_INVALID_AUTH_TOKEN = createError(
   'E_INVALID_AUTH_TOKEN',
   401
 )
+
+/**
+ * The user session is invalid
+ */
+export const E_INVALID_AUTH_SESSION = createError(
+  'Invalid or expired authentication session',
+  'E_INVALID_AUTH_SESSION',
+  401
+)
