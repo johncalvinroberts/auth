@@ -8,8 +8,8 @@
  */
 
 import { createHash } from 'node:crypto'
-import { base64, safeEqual } from '@adonisjs/core/helpers'
 import string from '@adonisjs/core/helpers/string'
+import { base64, safeEqual } from '@adonisjs/core/helpers'
 
 import * as errors from '../errors.js'
 import type { TokenContract } from './types.js'

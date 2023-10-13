@@ -8,8 +8,6 @@
  */
 
 import { Exception } from '@poppinss/utils'
-
-import type { PROVIDER_REAL_USER } from '../core/symbols.js'
 import type {
   TokenContract,
   UserProviderContract,
@@ -64,14 +62,14 @@ export type SessionGuardConfig = {
 /**
  * Events emitted by the session guard
  */
-export type SessionGuardEvents<UserProvider extends SessionUserProviderContract<unknown>> = {
+export type SessionGuardEvents<User> = {
   /**
    * The event is emitted when the user credentials
    * have been verified successfully.
    */
   'session_auth:credentials_verified': {
     uid: string
-    user: UserProvider[typeof PROVIDER_REAL_USER]
+    user: User
     password: string
   }
 
@@ -81,7 +79,7 @@ export type SessionGuardEvents<UserProvider extends SessionUserProviderContract<
    */
   'session_auth:login_failed': {
     error: Exception
-    user: UserProvider[typeof PROVIDER_REAL_USER] | null
+    user: User | null
   }
 
   /**
@@ -89,7 +87,7 @@ export type SessionGuardEvents<UserProvider extends SessionUserProviderContract<
    * a given user.
    */
   'session_auth:login_attempted': {
-    user: UserProvider[typeof PROVIDER_REAL_USER]
+    user: User
   }
 
   /**
@@ -97,9 +95,33 @@ export type SessionGuardEvents<UserProvider extends SessionUserProviderContract<
    * successfully
    */
   'session_auth:login_succeeded': {
-    user: UserProvider[typeof PROVIDER_REAL_USER]
+    user: User
     sessionId: string
     rememberMeToken?: RememberMeTokenContract
+  }
+
+  /**
+   * Attempting to authenticate the user
+   */
+  'session_auth:authentication_attempted': {
+    sessionId: string
+  }
+
+  /**
+   * Authentication was successful
+   */
+  'session_auth:authentication_succeeded': {
+    user: User
+    sessionId: string
+    rememberMeToken?: RememberMeTokenContract
+  }
+
+  /**
+   * Authentication failed
+   */
+  'session_auth:authentication_failed': {
+    error: Exception
+    sessionId: string
   }
 
   /**
@@ -107,7 +129,7 @@ export type SessionGuardEvents<UserProvider extends SessionUserProviderContract<
    * sucessfully
    */
   'session_auth:logged_out': {
-    user: UserProvider[typeof PROVIDER_REAL_USER]
+    user: User
     sessionId: string
   }
 }

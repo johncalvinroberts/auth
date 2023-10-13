@@ -7,14 +7,16 @@
  * file that was distributed with this source code.
  */
 
-import { HttpContext } from '@adonisjs/core/http'
+import type { HttpContext } from '@adonisjs/core/http'
+
 import debug from './debug.js'
+import type { AuthenticatorGuardFactory } from './types/main.js'
 
 /**
  * Authenticator is an HTTP request specific implementation for using
  * guards to login users and authenticate requests.
  */
-export class Authenticator<KnownGuards extends Record<string, (ctx: HttpContext) => unknown>> {
+export class Authenticator<KnownGuards extends Record<string, AuthenticatorGuardFactory>> {
   /**
    * Reference to HTTP context
    */

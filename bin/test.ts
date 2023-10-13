@@ -9,7 +9,7 @@ configure({
   suites: [
     {
       name: 'session',
-      files: ['tests/modules/session/**/*.spec.ts'],
+      files: ['tests/guards/session/**/*.spec.ts'],
     },
     {
       name: 'core',

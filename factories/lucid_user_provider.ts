@@ -12,7 +12,7 @@ import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { Scrypt } from '@adonisjs/core/hash/drivers/scrypt'
 import { LucidUserProvider } from '../src/core/user_providers/lucid.js'
 import { LucidAuthenticatable, LucidUserProviderOptions } from '../src/core/types.js'
-import { PROVIDER_REAL_USER } from '../src/core/symbols.js'
+import { PROVIDER_REAL_USER } from '../src/symbols.js'
 
 export class FactoryUser extends BaseModel {
   static table = 'users'
