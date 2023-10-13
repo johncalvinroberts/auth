@@ -129,5 +129,18 @@
   },
   "dependencies": {
     "@poppinss/utils": "^6.5.0-7"
+  },
+  "peerDependencies": {
+    "@adonisjs/core": "^6.1.5-26",
+    "@adonisjs/lucid": "^19.0.0-2",
+    "@adonisjs/session": "^7.0.0-11"
+  },
+  "peerDependenciesMeta": {
+    "@adonisjs/lucid": {
+      "optional": true
+    },
+    "@adonisjs/session": {
+      "optional": true
+    }
   }
 }
