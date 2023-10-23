@@ -24,6 +24,9 @@
     ".": "./build/index.js",
     "./types": "./build/src/types/main.js",
 
+    "./auth_provider": "./build/providers/auth_provider.js",
+    "./services/main": "./build/services/auth.js",
+
     "./core/token": "./build/src/core/token.js",
     "./core/guard_user": "./build/src/core/guard_user.js",
     "./core/user_providers/*": "./build/src/core/user_providers/*.js",
