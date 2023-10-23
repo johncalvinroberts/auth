@@ -11,10 +11,10 @@ import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { RememberMeToken } from '../../../src/session/token.js'
+import { RememberMeToken } from '../../../src/guards/session/token.js'
 import { FactoryUser } from '../../../factories/lucid_user_provider.js'
 import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
-import { DatabaseRememberTokenProvider } from '../../../src/session/token_providers/main.js'
+import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/main.js'
 import { createDatabase, createEmitter, createTables, pEvent, parseCookies } from '../../helpers.js'
 
 test.group('Session guard | login', () => {

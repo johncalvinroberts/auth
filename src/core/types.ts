@@ -10,7 +10,7 @@
 import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 
 import type { GuardUser } from './guard_user.js'
-import type { PROVIDER_REAL_USER } from '../symbols.js'
+import type { PROVIDER_REAL_USER } from '../auth/symbols.js'
 import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 
 /**
@@ -153,6 +153,11 @@ export type LucidUserProviderOptions<Model extends LucidAuthenticatable> = {
    * be given the preference.
    */
   client?: QueryClientContract
+
+  /**
+   * Model to use for authentication
+   */
+  model: () => Promise<{ default: Model }>
 
   /**
    * An array of uids to use when finding a user for login. Make

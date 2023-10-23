@@ -9,7 +9,7 @@
 
 import type { Database } from '@adonisjs/lucid/database'
 
-import debug from '../../debug.js'
+import debug from '../../auth/debug.js'
 import type { DatabaseTokenProviderOptions, TokenProviderContract } from '../types.js'
 
 /**

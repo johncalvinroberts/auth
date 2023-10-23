@@ -10,13 +10,13 @@
 import type { HttpContext } from '@adonisjs/core/http'
 
 import debug from './debug.js'
-import type { AuthenticatorGuardFactory } from './types/main.js'
+import type { GuardFactory } from './types.js'
 
 /**
  * Authenticator is an HTTP request specific implementation for using
  * guards to login users and authenticate requests.
  */
-export class Authenticator<KnownGuards extends Record<string, AuthenticatorGuardFactory>> {
+export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   /**
    * Reference to HTTP context
    */
@@ -26,7 +26,7 @@ export class Authenticator<KnownGuards extends Record<string, AuthenticatorGuard
    * Registered guards
    */
   #config: {
-    default?: keyof KnownGuards
+    default: keyof KnownGuards
     guards: KnownGuards
   }
 
@@ -35,7 +35,7 @@ export class Authenticator<KnownGuards extends Record<string, AuthenticatorGuard
    */
   #guardsCache: Partial<Record<keyof KnownGuards, unknown>> = {}
 
-  constructor(ctx: HttpContext, config: { default?: keyof KnownGuards; guards: KnownGuards }) {
+  constructor(ctx: HttpContext, config: { default: keyof KnownGuards; guards: KnownGuards }) {
     this.#ctx = ctx
     this.#config = config
     debug('creating authenticator. config %O', this.#config)
@@ -45,24 +45,26 @@ export class Authenticator<KnownGuards extends Record<string, AuthenticatorGuard
    * Returns an instance of a known guard. Guards instances are
    * cached during the lifecycle of an HTTP request.
    */
-  use<Guard extends keyof KnownGuards>(guard: Guard): ReturnType<KnownGuards[Guard]> {
+  use<Guard extends keyof KnownGuards>(guard?: Guard): ReturnType<KnownGuards[Guard]> {
+    const guardToUse = guard || this.#config.default
+
     /**
      * Use cached copy if exists
      */
-    const cachedGuard = this.#guardsCache[guard]
+    const cachedGuard = this.#guardsCache[guardToUse]
     if (cachedGuard) {
-      debug('using guard from cache. name: "%s"', guard)
+      debug('using guard from cache. name: "%s"', guardToUse)
       return cachedGuard as ReturnType<KnownGuards[Guard]>
     }
 
-    const guardFactory = this.#config.guards[guard]
+    const guardFactory = this.#config.guards[guardToUse]
 
     /**
      * Construct guard and cache it
      */
-    debug('creating guard. name: "%s"', guard)
+    debug('creating guard. name: "%s"', guardToUse)
     const guardInstance = guardFactory(this.#ctx)
-    this.#guardsCache[guard] = guardInstance
+    this.#guardsCache[guardToUse] = guardInstance
 
     return guardInstance as ReturnType<KnownGuards[Guard]>
   }

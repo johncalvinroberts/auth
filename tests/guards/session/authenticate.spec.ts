@@ -11,17 +11,17 @@ import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { RememberMeToken } from '../../../src/session/token.js'
+import { RememberMeToken } from '../../../src/guards/session/token.js'
 import { FactoryUser } from '../../../factories/lucid_user_provider.js'
 import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
-import { DatabaseRememberTokenProvider } from '../../../src/session/token_providers/main.js'
+import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/main.js'
 import {
+  pEvent,
   timeTravel,
   parseCookies,
   createTables,
   defineCookies,
   createDatabase,
-  pEvent,
   createEmitter,
 } from '../../helpers.js'
 
@@ -300,5 +300,26 @@ test.group('Session guard | authenticate', () => {
       const authUser = await sessionGuard.authenticate()
       assert.equal(authUser.id, user.id)
     })
+  })
+
+  test('silently authenticate using the check method', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const emitter = createEmitter()
+    const ctx = new HttpContextFactory().create()
+    await FactoryUser.createWithDefaults()
+    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+
+    const [authFailed, authenticateCall] = await Promise.allSettled([
+      pEvent(emitter, 'session_auth:authentication_failed'),
+      sessionMiddleware.handle(ctx, async () => {
+        await sessionGuard.check()
+      }),
+    ])
+
+    assert.equal(authFailed.status, 'fulfilled')
+    assert.equal(authenticateCall.status, 'fulfilled')
   })
 })

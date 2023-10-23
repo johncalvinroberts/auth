@@ -10,9 +10,10 @@
 import { Hash } from '@adonisjs/core/hash'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
 import { Scrypt } from '@adonisjs/core/hash/drivers/scrypt'
-import { LucidUserProvider } from '../src/core/user_providers/lucid.js'
-import { LucidAuthenticatable, LucidUserProviderOptions } from '../src/core/types.js'
-import { PROVIDER_REAL_USER } from '../src/symbols.js'
+
+import { PROVIDER_REAL_USER } from '../src/auth/symbols.js'
+import { BaseLucidUserProvider } from '../src/core/user_providers/lucid.js'
+import type { LucidAuthenticatable, LucidUserProviderOptions } from '../src/core/types.js'
 
 export class FactoryUser extends BaseModel {
   static table = 'users'
@@ -49,7 +50,7 @@ export class FactoryUser extends BaseModel {
 
 export class TestLucidUserProvider<
   UserModel extends LucidAuthenticatable,
-> extends LucidUserProvider<UserModel> {
+> extends BaseLucidUserProvider<UserModel> {
   declare [PROVIDER_REAL_USER]: InstanceType<UserModel>
 }
 
@@ -58,23 +59,20 @@ export class TestLucidUserProvider<
  * defaults for testing
  */
 export class LucidUserProviderFactory {
-  createForModel<Model extends LucidAuthenticatable>(
-    model: Model,
-    options: LucidUserProviderOptions<Model>
-  ) {
-    return new TestLucidUserProvider(
-      async () => {
-        return {
-          default: model,
-        }
-      },
-      {
-        ...options,
-      }
-    )
+  createForModel<Model extends LucidAuthenticatable>(options: LucidUserProviderOptions<Model>) {
+    return new TestLucidUserProvider({
+      ...options,
+    })
   }
 
   create() {
-    return this.createForModel(FactoryUser, { uids: ['email', 'username'] })
+    return this.createForModel({
+      model: async () => {
+        return {
+          default: FactoryUser,
+        }
+      },
+      uids: ['email', 'username'],
+    })
   }
 }

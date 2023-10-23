@@ -22,7 +22,7 @@ import setCookieParser, { CookieMap } from 'set-cookie-parser'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
-import { SessionGuardEvents } from '../src/session/types.js'
+import { SessionGuardEvents } from '../src/guards/session/types.js'
 import { FactoryUser } from '../factories/lucid_user_provider.js'
 
 /**

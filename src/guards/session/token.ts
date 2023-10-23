@@ -7,14 +7,13 @@
  * file that was distributed with this source code.
  */
 
-import { Token } from '../core/token.js'
-import { RememberMeTokenContract } from './types.js'
+import { Token } from '../../core/token.js'
 
 /**
  * Remember me token represents a remember me token created
  * for a peristed login flow.
  */
-export class RememberMeToken extends Token implements RememberMeTokenContract {
+export class RememberMeToken extends Token {
   /**
    * Static name for the token to uniquely identify a
    * bucket of tokens

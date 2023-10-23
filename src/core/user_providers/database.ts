@@ -11,9 +11,9 @@ import type { Hash } from '@adonisjs/core/hash'
 import { RuntimeException } from '@poppinss/utils'
 import type { Database } from '@adonisjs/lucid/database'
 
-import debug from '../../debug.js'
+import debug from '../../auth/debug.js'
 import { GuardUser } from '../guard_user.js'
-import { PROVIDER_REAL_USER } from '../../symbols.js'
+import { PROVIDER_REAL_USER } from '../../auth/symbols.js'
 import type { DatabaseUserProviderOptions, UserProviderContract } from '../types.js'
 
 /**
@@ -71,7 +71,7 @@ class DatabaseUser<RealUser extends Record<string, any>> extends GuardUser<RealU
  * Database user provider is used to lookup user for authentication
  * using the Database query builder.
  */
-export abstract class DatabaseUserProvider<RealUser extends Record<string, any>>
+export abstract class BaseDatabaseUserProvider<RealUser extends Record<string, any>>
   implements UserProviderContract<RealUser>
 {
   declare [PROVIDER_REAL_USER]: RealUser

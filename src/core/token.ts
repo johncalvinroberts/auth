@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto'
 import string from '@adonisjs/core/helpers/string'
 import { base64, safeEqual } from '@adonisjs/core/helpers'
 
-import * as errors from '../errors.js'
+import * as errors from '../auth/errors.js'
 import type { TokenContract } from './types.js'
 
 /**

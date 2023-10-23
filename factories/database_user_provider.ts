@@ -10,11 +10,11 @@
 import { Hash } from '@adonisjs/core/hash'
 import type { Database } from '@adonisjs/lucid/database'
 import { Scrypt } from '@adonisjs/core/hash/drivers/scrypt'
-import { DatabaseUserProvider } from '../src/core/user_providers/database.js'
+import { BaseDatabaseUserProvider } from '../src/core/user_providers/database.js'
 
 export class TestDatabaseUserProvider<
   RealUser extends Record<string, any>,
-> extends DatabaseUserProvider<RealUser> {}
+> extends BaseDatabaseUserProvider<RealUser> {}
 
 /**
  * Creates an instance of the DatabaseUserProvider with sane

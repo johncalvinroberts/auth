@@ -9,9 +9,9 @@
 
 import { RuntimeException } from '@poppinss/utils'
 
-import debug from '../../debug.js'
+import debug from '../../auth/debug.js'
 import { GuardUser } from '../guard_user.js'
-import { PROVIDER_REAL_USER } from '../../symbols.js'
+import { PROVIDER_REAL_USER } from '../../auth/symbols.js'
 import type {
   UserProviderContract,
   LucidAuthenticatable,
@@ -56,7 +56,7 @@ class LucidUser<RealUser extends InstanceType<LucidAuthenticatable>> extends Gua
  * Lucid user provider is used to lookup user for authentication
  * using a Lucid model.
  */
-export abstract class LucidUserProvider<UserModel extends LucidAuthenticatable>
+export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatable>
   implements UserProviderContract<InstanceType<UserModel>>
 {
   declare [PROVIDER_REAL_USER]: InstanceType<UserModel>
@@ -67,11 +67,6 @@ export abstract class LucidUserProvider<UserModel extends LucidAuthenticatable>
   protected model?: UserModel
 
   constructor(
-    /**
-     * Model provider is used to lazily import the model
-     */
-    protected modelProvider: () => Promise<{ default: UserModel }>,
-
     /**
      * Lucid provider options
      */
@@ -89,7 +84,7 @@ export abstract class LucidUserProvider<UserModel extends LucidAuthenticatable>
       return this.model
     }
 
-    const importedModel = await this.modelProvider()
+    const importedModel = await this.options.model()
     this.model = importedModel.default
     debug('lucid_user_provider: using model %O', this.model)
     return this.model

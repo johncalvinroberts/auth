@@ -8,32 +8,13 @@
  */
 
 import { Exception } from '@poppinss/utils'
+
+import type { RememberMeToken } from './token.js'
 import type {
-  TokenContract,
   UserProviderContract,
   TokenProviderContract,
   DatabaseTokenProviderOptions,
-} from '../core/types.js'
-
-/**
- * Representation of a remember me token
- */
-export interface RememberMeTokenContract extends TokenContract {
-  /**
-   * Token type to uniquely identify a bucket of tokens
-   */
-  readonly type: 'remember_me_token'
-
-  /**
-   * Timestamp when the token will expire
-   */
-  expiresAt: Date
-
-  /**
-   * Reference to the user for whom the token is generated
-   */
-  userId: string | number
-}
+} from '../../core/types.js'
 
 /**
  * The SessionUserProvider is used to lookup a user for session based authentication.
@@ -44,8 +25,7 @@ export interface SessionUserProviderContract<RealUser> extends UserProviderContr
  * The RememberMeProviderContract is used to persist and lookup tokens for
  * session based authentication with remember me option.
  */
-export interface RememberMeProviderContract
-  extends TokenProviderContract<RememberMeTokenContract> {}
+export interface RememberMeProviderContract extends TokenProviderContract<RememberMeToken> {}
 
 /**
  * Config accepted by the session guard
@@ -56,7 +36,7 @@ export type SessionGuardConfig = {
    *
    * Defaults to "5 years"
    */
-  rememberMeTokenAge: string | number
+  rememberMeTokenAge?: string | number
 }
 
 /**
@@ -97,7 +77,7 @@ export type SessionGuardEvents<User> = {
   'session_auth:login_succeeded': {
     user: User
     sessionId: string
-    rememberMeToken?: RememberMeTokenContract
+    rememberMeToken?: RememberMeToken
   }
 
   /**
@@ -113,7 +93,7 @@ export type SessionGuardEvents<User> = {
   'session_auth:authentication_succeeded': {
     user: User
     sessionId: string
-    rememberMeToken?: RememberMeTokenContract
+    rememberMeToken?: RememberMeToken
   }
 
   /**

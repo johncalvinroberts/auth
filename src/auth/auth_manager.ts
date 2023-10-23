@@ -9,23 +9,23 @@
 
 import type { HttpContext } from '@adonisjs/core/http'
 
+import type { GuardFactory } from './types.js'
 import { Authenticator } from './authenticator.js'
-import type { AuthenticatorGuardFactory } from './types/main.js'
 
 /**
  * Auth manager exposes the API to register and manage authentication
  * guards from the config
  */
-export class AuthManager<KnownGuards extends Record<string, AuthenticatorGuardFactory>> {
+export class AuthManager<KnownGuards extends Record<string, GuardFactory>> {
   /**
    * Registered guards
    */
   #config: {
-    default?: keyof KnownGuards
+    default: keyof KnownGuards
     guards: KnownGuards
   }
 
-  constructor(config: { default?: keyof KnownGuards; guards: KnownGuards }) {
+  constructor(config: { default: keyof KnownGuards; guards: KnownGuards }) {
     this.#config = config
   }
 

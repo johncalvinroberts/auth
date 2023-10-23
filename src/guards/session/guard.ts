@@ -13,15 +13,14 @@ import { Emitter } from '@adonisjs/core/events'
 import type { HttpContext } from '@adonisjs/core/http'
 import { Exception, RuntimeException } from '@poppinss/utils'
 
-import debug from '../debug.js'
-import * as errors from '../errors.js'
+import debug from '../../auth/debug.js'
 import { RememberMeToken } from './token.js'
-import type { GuardContract } from '../types/main.js'
-import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../symbols.js'
+import * as errors from '../../auth/errors.js'
+import type { GuardContract } from '../../auth/types.js'
+import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../../auth/symbols.js'
 import type {
   SessionGuardEvents,
   SessionGuardConfig,
-  RememberMeTokenContract,
   RememberMeProviderContract,
   SessionUserProviderContract,
 } from './types.js'
@@ -235,14 +234,17 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     /**
      * Manage remember me cookie
      */
-    let token: RememberMeTokenContract | undefined
+    let token: RememberMeToken | undefined
     if (remember) {
       const tokenProvider = this.#getTokenProvider()
 
       /**
        * Create a token
        */
-      token = RememberMeToken.create(providerUser.getId(), this.#config.rememberMeTokenAge)
+      token = RememberMeToken.create(
+        providerUser.getId(),
+        this.#config.rememberMeTokenAge || '2years'
+      )
 
       /**
        * Persist remember me token inside the database
@@ -425,7 +427,10 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     updatedAtWithBuffer.setSeconds(updatedAtWithBuffer.getSeconds() + 60)
 
     if (updatedAtWithBuffer < currentTime) {
-      const newToken = RememberMeToken.create(token.userId, this.#config.rememberMeTokenAge)
+      const newToken = RememberMeToken.create(
+        token.userId,
+        this.#config.rememberMeTokenAge || '2years'
+      )
       await this.#rememberMeTokenProvider.updateTokenBySeries(
         token.series,
         newToken.hash,

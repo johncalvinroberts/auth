@@ -9,8 +9,11 @@
 
 import type { HttpContext } from '@adonisjs/core/http'
 
-import { SessionGuard } from '../src/session/guard.js'
-import type { SessionGuardConfig, SessionUserProviderContract } from '../src/session/types.js'
+import { SessionGuard } from '../src/guards/session/guard.js'
+import type {
+  SessionGuardConfig,
+  SessionUserProviderContract,
+} from '../src/guards/session/types.js'
 import {
   FactoryUser,
   TestLucidUserProvider,

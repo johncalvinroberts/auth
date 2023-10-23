@@ -9,7 +9,7 @@
 
 import { RememberMeToken } from '../token.js'
 import type { RememberMeProviderContract } from '../types.js'
-import { DatabaseTokenProvider } from '../../core/token_providers/database.js'
+import { DatabaseTokenProvider } from '../../../core/token_providers/database.js'
 
 /**
  * Remember me token provider to persist tokens inside the database
