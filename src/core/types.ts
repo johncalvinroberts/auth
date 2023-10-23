@@ -11,7 +11,7 @@ import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 
 import type { GuardUser } from './guard_user.js'
 import type { PROVIDER_REAL_USER } from '../symbols.js'
-import { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
+import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 
 /**
  * A token represents an opaque token issued to a client
@@ -172,15 +172,6 @@ export type DatabaseUserProviderOptions<RealUser extends Record<string, any>> = 
   connection?: string
 
   /**
-   * Optionally define the query client instance to use for making
-   * database queries.
-   *
-   * When both "connection" and "client" are defined, the client will
-   * be given the preference.
-   */
-  client?: QueryClientContract
-
-  /**
    * Database table to query to find the user
    */
   table: string
@@ -211,15 +202,6 @@ export type DatabaseTokenProviderOptions = {
    * queries
    */
   connection?: string
-
-  /**
-   * Optionally define the query client instance to use for making
-   * database queries.
-   *
-   * When both "connection" and "client" are defined, the client will
-   * be given the preference.
-   */
-  client?: QueryClientContract
 
   /**
    * Database table to query to find the user

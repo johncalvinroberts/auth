@@ -100,9 +100,7 @@ export abstract class DatabaseUserProvider<RealUser extends Record<string, any>>
    * Returns an instance of the query builder
    */
   protected getQueryBuilder() {
-    return this.options.client
-      ? this.options.client.query()
-      : this.db.connection(this.options.connection).query()
+    return this.db.connection(this.options.connection).query()
   }
 
   /**

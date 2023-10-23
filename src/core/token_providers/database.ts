@@ -59,9 +59,7 @@ export abstract class DatabaseTokenProvider<Token> implements TokenProviderContr
    * Returns an instance of the query builder
    */
   protected getQueryBuilder() {
-    return this.options.client
-      ? this.options.client.query<DatabaseTokenRow>()
-      : this.db.connection(this.options.connection).query<DatabaseTokenRow>()
+    return this.db.connection(this.options.connection).query<DatabaseTokenRow>()
   }
 
   /**
@@ -69,9 +67,7 @@ export abstract class DatabaseTokenProvider<Token> implements TokenProviderContr
    * queries
    */
   protected getInsertQueryBuilder() {
-    return this.options.client
-      ? this.options.client.insertQuery()
-      : this.db.connection(this.options.connection).insertQuery()
+    return this.db.connection(this.options.connection).insertQuery()
   }
 
   /**
