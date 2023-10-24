@@ -9,13 +9,11 @@
     "build/configure.d.ts",
     "build/index.js",
     "build/index.d.ts",
-    "build/src",
-    "build/services",
-    "build/providers",
     "build/factories",
-    "build/stubs",
-    "build/index.d.ts",
-    "build/index.js"
+    "build/providers",
+    "build/services",
+    "build/src",
+    "build/stubs"
   ],
   "engines": {
     "node": ">=18.16.0"
