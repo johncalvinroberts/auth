@@ -51,9 +51,12 @@ export interface Authenticators {}
 /**
  * Infer authenticators from the auth config
  */
-export type InferAuthenticators<Config extends ConfigProvider<unknown>> = Awaited<
-  ReturnType<Config['resolver']>
->
+export type InferAuthenticators<
+  Config extends ConfigProvider<{
+    default: unknown
+    guards: unknown
+  }>,
+> = Awaited<ReturnType<Config['resolver']>>['guards']
 
 /**
  * Auth service is a singleton instance of the AuthManager
@@ -61,7 +64,9 @@ export type InferAuthenticators<Config extends ConfigProvider<unknown>> = Awaite
  * app.
  */
 export interface AuthService
-  extends AuthManager<Authenticators extends GuardFactory ? Authenticators : never> {}
+  extends AuthManager<
+    Authenticators extends Record<string, GuardFactory> ? Authenticators : never
+  > {}
 
 /**
  * Config provider for exporting guard
