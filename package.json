@@ -20,7 +20,7 @@
   },
   "exports": {
     ".": "./build/index.js",
-    "./types": "./build/src/types/main.js",
+    "./types": "./build/src/auth/types.js",
     "./auth_provider": "./build/providers/auth_provider.js",
     "./services/main": "./build/services/auth.js",
     "./core/token": "./build/src/core/token.js",
