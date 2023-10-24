@@ -1,0 +1,35 @@
+{{{
+  exports({ to: app.configPath('auth.ts') })
+}}}
+import { defineConfig, providers } from '@adonisjs/auth'
+{{#if provider === 'lucid'}}
+/**
+ * Using the "models/user" model to find users during
+ * login and authentication
+ */
+const userProvider = providers.lucid({
+  model: () => import('#models/user'),
+  uids: ['email'],
+})
+{{/if}}
+{{#if provider === 'db'}}
+/**
+ * Using Lucid query builder to directly query the database
+ * to find users during login and authentication.
+ */
+const userProvider = providers.db({
+  table: 'users',
+  passwordColumnName: 'password',
+  id: 'id',
+  uids: ['email']
+})
+{{/if}}
+
+const authConfig = defineConfig({
+  guards: {}
+})
+
+export default authConfig
+declare module '@adonisjs/auth/types' {
+  interface Authenticators extends InferAuthenticators<typeof authConfig> {}
+}

@@ -1,0 +1,12 @@
+import { HttpContext } from '@adonisjs/core/http'
+import { NextFn } from '@adonisjs/core/http/types'
+
+type AuthMiddlewareOptions = {
+  guards?: (keyof Authenticators)[]
+}
+
+export default class AuthMiddleware {
+  async handle({ auth }: HttpContext, next: NextFn, options?: AuthMiddlewareOptions) {
+    return next()
+  }
+}
