@@ -27,6 +27,7 @@ export type ResolvedAuthConfig<
   KnownGuards extends Record<string, GuardFactory | GuardConfigProvider<GuardFactory>>,
 > = {
   default: keyof KnownGuards
+  loginRoute: string
   guards: {
     [K in keyof KnownGuards]: KnownGuards[K] extends GuardConfigProvider<infer A>
       ? A
@@ -43,6 +44,7 @@ export function defineConfig<
   KnownGuards extends Record<string, GuardFactory | GuardConfigProvider<GuardFactory>>,
 >(config: {
   default: keyof KnownGuards
+  loginRoute: string
   guards: KnownGuards
 }): ConfigProvider<ResolvedAuthConfig<KnownGuards>> {
   return configProvider.create(async (app) => {
@@ -60,6 +62,7 @@ export function defineConfig<
 
     return {
       default: config.default,
+      loginRoute: config.loginRoute,
       guards: guards,
     } as ResolvedAuthConfig<KnownGuards>
   })

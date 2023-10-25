@@ -34,6 +34,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
    */
   #config: {
     default: keyof KnownGuards
+    loginRoute: string
     guards: KnownGuards
   }
 
@@ -82,7 +83,10 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
     return this.use(this.#authenticatedViaGuard || this.defaultGuard).authenticationAttempted
   }
 
-  constructor(ctx: HttpContext, config: { default: keyof KnownGuards; guards: KnownGuards }) {
+  constructor(
+    ctx: HttpContext,
+    config: { default: keyof KnownGuards; loginRoute: string; guards: KnownGuards }
+  ) {
     this.#ctx = ctx
     this.#config = config
     debug('creating authenticator. config %O', this.#config)
@@ -126,7 +130,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
    *
    * Otherwise, "AuthenticationException" will be raised.
    */
-  async authenticateUsing(guards?: (keyof KnownGuards)[], options?: { redirectTo?: string }) {
+  async authenticateUsing(guards?: (keyof KnownGuards)[], options?: { loginRoute?: string }) {
     const guardsToUse = guards || [this.defaultGuard]
     let lastUsedGuardDriver: string | undefined
 
@@ -144,7 +148,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
     throw new AuthenticationException('Unauthorized access', {
       code: 'E_UNAUTHORIZED_ACCESS',
       guardDriverName: lastUsedGuardDriver!,
-      redirectTo: options?.redirectTo,
+      redirectTo: options?.loginRoute || this.#config.loginRoute,
     })
   }
 }

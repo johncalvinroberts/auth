@@ -26,7 +26,11 @@ const userProvider = providers.db({
 {{/if}}
 
 const authConfig = defineConfig({
-  guards: {}
+  default: 'web',
+  loginRoute: '/login',
+  guards: {
+    web: {} // to be configured
+  }
 })
 
 export default authConfig

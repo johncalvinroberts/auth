@@ -7,7 +7,7 @@ import type { Authenticators } from '@adonisjs/auth/types'
  */
 export type AuthMiddlewareOptions = {
   guards?: (keyof Authenticators)[]
-  redirectTo?: string
+  loginRoute?: string
 }
 
 export default class AuthMiddleware {
