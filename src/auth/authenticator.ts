@@ -89,6 +89,18 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   }
 
   /**
+   * Returns an instance of the logged-in user or throws an
+   * exception
+   */
+  getUserOrFail(): {
+    [K in keyof KnownGuards]: ReturnType<ReturnType<KnownGuards[K]>['getUserOrFail']>
+  }[keyof KnownGuards] {
+    return this.use(this.#authenticatedViaGuard || this.defaultGuard).getUserOrFail() as {
+      [K in keyof KnownGuards]: ReturnType<ReturnType<KnownGuards[K]>['getUserOrFail']>
+    }[keyof KnownGuards]
+  }
+
+  /**
    * Returns an instance of a known guard. Guards instances are
    * cached during the lifecycle of an HTTP request.
    */

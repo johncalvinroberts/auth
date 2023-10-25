@@ -23,6 +23,11 @@ export interface GuardContract<User> {
   user?: User
 
   /**
+   * Returns logged-in user or throws an exception
+   */
+  getUserOrFail(): User
+
+  /**
    * A boolean to know if the current request has
    * been authenticated
    */

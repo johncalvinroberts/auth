@@ -78,6 +78,7 @@ test.group('Authenticator', () => {
     assert.instanceOf(authenticator.user, FactoryUser)
     assert.equal(authenticator.user!.id, user.id)
     expectTypeOf(authenticator.user).toMatchTypeOf<FactoryUser | undefined>()
+    expectTypeOf(authenticator.getUserOrFail()).toMatchTypeOf<FactoryUser>()
     assert.equal(authenticator.authenticatedViaGuard, 'web')
     assert.isTrue(authenticator.isAuthenticated)
     assert.isTrue(authenticator.authenticationAttempted)
