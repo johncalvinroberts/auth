@@ -160,4 +160,41 @@ test.group('Configure', (group) => {
       `router.use([() => import('@adonisjs/auth/initialize_auth_middleware')])`
     )
   }).timeout(60 * 1000)
+
+  test('output session guard config', async ({ assert }) => {
+    const ignitor = new IgnitorFactory()
+      .withCoreProviders()
+      .withCoreConfig()
+      .create(BASE_URL, {
+        importer: (filePath) => {
+          if (filePath.startsWith('./') || filePath.startsWith('../')) {
+            return import(new URL(filePath, BASE_URL).href)
+          }
+
+          return import(filePath)
+        },
+      })
+
+    const app = ignitor.createApp('web')
+    await app.init()
+    await app.boot()
+
+    const ace = await app.container.make('ace')
+    ace.ui.switchMode('raw')
+
+    const command = await ace.create(Configure, ['../../../index.js', '--guard=session'])
+    command.prompt.trap('Do you want to use remember me tokens?').reject()
+    await command.exec()
+
+    assert.deepEqual(command.logger.getLogs()[0].message.split('\n'), [
+      `import { sessionGuard } from '@adonisjs/auth/session'`,
+      '',
+      `{`,
+      `  web: sessionGuard({`,
+      `    provider: userProvider,`,
+      `    `,
+      `  })`,
+      `}`,
+    ])
+  }).timeout(60 * 1000)
 })

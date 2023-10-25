@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import { stubsRoot } from './index.js'
 import type Configure from '@adonisjs/core/commands/configure'
 
 /**
@@ -32,9 +33,27 @@ async function configureProvider(command: Configure) {
 }
 
 /**
+ * Configures the session guard and output its config
+ * to the console
+ */
+async function configureSessionGuard(command: Configure) {
+  const tokens = await command.prompt.confirm('Do you want to use remember me tokens?')
+
+  const stubs = await command.app.stubs.create()
+  const stub = await stubs.build('guards/session.stub', { source: stubsRoot })
+  const { contents } = await stub.prepare({ tokens })
+
+  command.logger.log(contents)
+}
+
+/**
  * Configures the auth package
  */
 export async function configure(command: Configure) {
+  if (command.parsedFlags && command.parsedFlags.guard === 'session') {
+    return configureSessionGuard(command)
+  }
+
   await configureProvider(command)
   const codemods = await command.createCodemods()
 

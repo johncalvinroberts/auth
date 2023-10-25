@@ -1,0 +1,21 @@
+{{{
+  exports({
+    to: app.makePath('config/auth.ts')
+  })
+}}}
+{{#if tokens}}
+import { sessionGuard, tokensProvider } from '@adonisjs/auth/session'
+{{#else}}
+import { sessionGuard } from '@adonisjs/auth/session'
+{{/if}}
+
+{
+  web: sessionGuard({
+    provider: userProvider,
+    {{#if tokens}}
+    tokens: tokensProvider.db({
+      table: 'remember_me_tokens'
+    })
+    {{/if}}
+  })
+}
