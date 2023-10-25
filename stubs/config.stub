@@ -21,7 +21,7 @@ const userProvider = providers.db({
   table: 'users',
   passwordColumnName: 'password',
   id: 'id',
-  uids: ['email']
+  uids: ['email'],
 })
 {{/if}}
 

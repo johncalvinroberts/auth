@@ -7,55 +7,157 @@
  * file that was distributed with this source code.
  */
 
-// import { test } from '@japa/runner'
-// import { fileURLToPath } from 'node:url'
-// import { IgnitorFactory } from '@adonisjs/core/factories'
-// import Configure from '@adonisjs/core/commands/configure'
+import { test } from '@japa/runner'
+import { fileURLToPath } from 'node:url'
+import { IgnitorFactory } from '@adonisjs/core/factories'
+import Configure from '@adonisjs/core/commands/configure'
 
-// const BASE_URL = new URL('./tmp/', import.meta.url)
+const BASE_URL = new URL('./tmp/', import.meta.url)
 
-// test.group('Configure', (group) => {
-//   group.each.setup(({ context }) => {
-//     context.fs.baseUrl = BASE_URL
-//     context.fs.basePath = fileURLToPath(BASE_URL)
-//   })
+test.group('Configure', (group) => {
+  group.each.setup(({ context }) => {
+    context.fs.baseUrl = BASE_URL
+    context.fs.basePath = fileURLToPath(BASE_URL)
+  })
 
-//   test('create config file and register provider', async ({ fs, assert }) => {
-//     const ignitor = new IgnitorFactory()
-//       .withCoreProviders()
-//       .withCoreConfig()
-//       .create(BASE_URL, {
-//         importer: (filePath) => {
-//           if (filePath.startsWith('./') || filePath.startsWith('../')) {
-//             return import(new URL(filePath, BASE_URL).href)
-//           }
+  test('create config file and register provider', async ({ fs, assert }) => {
+    const ignitor = new IgnitorFactory()
+      .withCoreProviders()
+      .withCoreConfig()
+      .create(BASE_URL, {
+        importer: (filePath) => {
+          if (filePath.startsWith('./') || filePath.startsWith('../')) {
+            return import(new URL(filePath, BASE_URL).href)
+          }
 
-//           return import(filePath)
-//         },
-//       })
+          return import(filePath)
+        },
+      })
 
-//     // await fs.create('.env', '')
-//     // await fs.createJson('tsconfig.json', {})
-//     // await fs.create('start/env.ts', `export default Env.create(new URL('./'), {})`)
-//     // await fs.create('start/kernel.ts', `router.use([])`)
-//     // await fs.create('adonisrc.ts', `export default defineConfig({}) {}`)
+    await fs.create('start/kernel.ts', `router.use([])`)
+    await fs.createJson('tsconfig.json', {})
+    await fs.create('adonisrc.ts', `export default defineConfig({}) {}`)
 
-//     const app = ignitor.createApp('web')
-//     await app.init()
-//     await app.boot()
+    const app = ignitor.createApp('web')
+    await app.init()
+    await app.boot()
 
-//     const ace = await app.container.make('ace')
-//     const command = await ace.create(Configure, ['../../../index.js'])
-//     await command.exec()
+    const ace = await app.container.make('ace')
+    const command = await ace.create(Configure, ['../../../index.js'])
+    command.prompt.trap('Select the user provider you want to use').replyWith('lucid')
+    await command.exec()
 
-//     // await assert.fileExists('config/session.ts')
-//     // await assert.fileExists('adonisrc.ts')
-//     // await assert.fileContains('adonisrc.ts', '@adonisjs/session/session_provider')
-//     // await assert.fileContains('config/session.ts', 'defineConfig')
-//     // await assert.fileContains('.env', 'SESSION_DRIVER=cookie')
-//     // await assert.fileContains(
-//     //   'start/env.ts',
-//     //   `SESSION_DRIVER: Env.schema.enum(['cookie', 'redis', 'file', 'memory'] as const)`
-//     // )
-//   }).timeout(60 * 1000)
-// })
+    await assert.fileExists('config/auth.ts')
+    await assert.fileExists('adonisrc.ts')
+    await assert.fileContains('adonisrc.ts', '@adonisjs/auth/auth_provider')
+    await assert.fileContains(
+      'config/auth.ts',
+      `const userProvider = providers.lucid({
+  model: () => import('#models/user'),
+  uids: ['email'],
+})`
+    )
+    await assert.fileContains(
+      'config/auth.ts',
+      `declare module '@adonisjs/auth/types' {
+  interface Authenticators extends InferAuthenticators<typeof authConfig> {}
+}`
+    )
+  }).timeout(60 * 1000)
+
+  test('create config file with db user provider', async ({ fs, assert }) => {
+    const ignitor = new IgnitorFactory()
+      .withCoreProviders()
+      .withCoreConfig()
+      .create(BASE_URL, {
+        importer: (filePath) => {
+          if (filePath.startsWith('./') || filePath.startsWith('../')) {
+            return import(new URL(filePath, BASE_URL).href)
+          }
+
+          return import(filePath)
+        },
+      })
+
+    await fs.create('start/kernel.ts', `router.use([])`)
+    await fs.createJson('tsconfig.json', {})
+    await fs.create('adonisrc.ts', `export default defineConfig({}) {}`)
+
+    const app = ignitor.createApp('web')
+    await app.init()
+    await app.boot()
+
+    const ace = await app.container.make('ace')
+    const command = await ace.create(Configure, ['../../../index.js'])
+    command.prompt.trap('Select the user provider you want to use').replyWith('db')
+    await command.exec()
+
+    await assert.fileExists('config/auth.ts')
+    await assert.fileExists('adonisrc.ts')
+    await assert.fileContains('adonisrc.ts', '@adonisjs/auth/auth_provider')
+    await assert.fileContains(
+      'config/auth.ts',
+      `const userProvider = providers.db({
+  table: 'users',
+  passwordColumnName: 'password',
+  id: 'id',
+  uids: ['email'],
+})`
+    )
+    await assert.fileContains(
+      'config/auth.ts',
+      `declare module '@adonisjs/auth/types' {
+  interface Authenticators extends InferAuthenticators<typeof authConfig> {}
+}`
+    )
+  }).timeout(60 * 1000)
+
+  test('register middleware', async ({ fs, assert }) => {
+    const ignitor = new IgnitorFactory()
+      .withCoreProviders()
+      .withCoreConfig()
+      .create(BASE_URL, {
+        importer: (filePath) => {
+          if (filePath.startsWith('./') || filePath.startsWith('../')) {
+            return import(new URL(filePath, BASE_URL).href)
+          }
+
+          return import(filePath)
+        },
+      })
+
+    await fs.create(
+      'start/kernel.ts',
+      `
+    router.use([])
+    export const { middleware } = router.named({
+    })
+    `
+    )
+    await fs.createJson('tsconfig.json', {})
+    await fs.create('adonisrc.ts', `export default defineConfig({}) {}`)
+
+    const app = ignitor.createApp('web')
+    await app.init()
+    await app.boot()
+
+    const ace = await app.container.make('ace')
+    const command = await ace.create(Configure, ['../../../index.js'])
+    command.prompt.trap('Select the user provider you want to use').replyWith('db')
+    await command.exec()
+
+    await assert.fileExists('config/auth.ts')
+    await assert.fileExists('adonisrc.ts')
+
+    await assert.fileContains(
+      'start/kernel.ts',
+      `export const { middleware } = router.named({
+  auth: () => import('@adonisjs/auth/auth_middleware')
+})`
+    )
+    await assert.fileContains(
+      'start/kernel.ts',
+      `router.use([() => import('@adonisjs/auth/initialize_auth_middleware')])`
+    )
+  }).timeout(60 * 1000)
+})

@@ -126,7 +126,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
    *
    * Otherwise, "AuthenticationException" will be raised.
    */
-  async authenticateUsing(guards?: (keyof KnownGuards)[]) {
+  async authenticateUsing(guards?: (keyof KnownGuards)[], options?: { redirectTo?: string }) {
     const guardsToUse = guards || [this.defaultGuard]
     let lastUsedGuardDriver: string | undefined
 
@@ -144,6 +144,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
     throw new AuthenticationException('Unauthorized access', {
       code: 'E_UNAUTHORIZED_ACCESS',
       guardDriverName: lastUsedGuardDriver!,
+      redirectTo: options?.redirectTo,
     })
   }
 }
