@@ -38,7 +38,7 @@ test.group('Token', () => {
     const { series, value, hash } = TestToken.seed()
     const token = new TestToken(series, value, hash)
 
-    assert.isTrue(token.verify(TestToken.decode(value).value))
+    assert.isTrue(token.verify(TestToken.decode(value)!.value))
   })
 
   test('set token metadata', ({ assert }) => {
@@ -49,11 +49,11 @@ test.group('Token', () => {
   })
 
   test('decode valid and invalid tokens', ({ assert }) => {
-    assert.throws(() => TestToken.decode('foo'), 'Invalid or expired token value')
-    assert.throws(() => TestToken.decode('foo.bar'), 'Invalid or expired token value')
+    assert.isNull(TestToken.decode('foo'))
+    assert.isNull(TestToken.decode('foo.bar'))
 
     const { series, value } = TestToken.seed()
-    const decoded = TestToken.decode(value)
+    const decoded = TestToken.decode(value)!
     assert.equal(series, decoded.series)
   })
 })

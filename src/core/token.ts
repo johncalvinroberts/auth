@@ -11,7 +11,6 @@ import { createHash } from 'node:crypto'
 import string from '@adonisjs/core/helpers/string'
 import { base64, safeEqual } from '@adonisjs/core/helpers'
 
-import * as errors from '../auth/errors.js'
 import type { TokenContract } from './types.js'
 
 /**
@@ -108,17 +107,20 @@ export abstract class Token implements TokenContract {
   /**
    * Decodes a publicly shared token and return the series
    * and the token value from it.
+   *
+   * Returns null when unable to decode the token because of
+   * invalid format or encoding.
    */
-  static decode(value: string) {
+  static decode(value: string): null | { series: string; value: string } {
     const [series, ...tokenValue] = value.split('.')
     if (!series || tokenValue.length === 0) {
-      throw new errors.E_INVALID_AUTH_TOKEN()
+      return null
     }
 
     const decodedSeries = base64.urlDecode(series)
     const decodedValue = base64.urlDecode(tokenValue.join('.'))
     if (!decodedSeries || !decodedValue) {
-      throw new errors.E_INVALID_AUTH_TOKEN()
+      return null
     }
 
     return {

@@ -94,7 +94,7 @@ test.group('Session guard | login', () => {
      * Ensure the remember me cookie can be decoded by
      * the server
      */
-    const decodedToken = RememberMeToken.decode(cookies.remember_web.value)
+    const decodedToken = RememberMeToken.decode(cookies.remember_web.value)!
     assert.properties(decodedToken, ['series', 'value'])
 
     /**

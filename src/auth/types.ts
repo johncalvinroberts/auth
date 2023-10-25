@@ -7,7 +7,6 @@
  * file that was distributed with this source code.
  */
 
-import type { Emitter } from '@adonisjs/core/events'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { ApplicationService, ConfigProvider } from '@adonisjs/core/types'
 
@@ -19,20 +18,45 @@ import type { GUARD_KNOWN_EVENTS } from './symbols.js'
  */
 export interface GuardContract<User> {
   /**
-   * Reference to the user type
+   * Reference to the currently authenticated user
    */
   user?: User
+
+  /**
+   * A boolean to know if the current request has
+   * been authenticated
+   */
+  isAuthenticated: boolean
+
+  /**
+   * Whether or not the authentication has been attempted
+   * during the current request
+   */
+  authenticationAttempted: boolean
+
+  /**
+   * Check if the current request has been
+   * authenticated without throwing an
+   * exception
+   */
+  check(): Promise<boolean>
+
+  /**
+   * Authenticates the current request and throws
+   * an exception if the request is not authenticated.
+   */
+  authenticate(): Promise<User>
+
+  /**
+   * A unique name for the guard driver
+   */
+  driverName: string
 
   /**
    * Aymbol for infer the events emitted by a specific
    * guard
    */
   [GUARD_KNOWN_EVENTS]: unknown
-
-  /**
-   * Accept an instance of the emitter to emit events
-   */
-  withEmitter(emitter: Emitter<any>): this
 }
 
 /**

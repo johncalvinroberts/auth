@@ -25,6 +25,13 @@ export class AuthManager<KnownGuards extends Record<string, GuardFactory>> {
     guards: KnownGuards
   }
 
+  /**
+   * Name of the default guard
+   */
+  get defaultGuard() {
+    return this.#config.default
+  }
+
   constructor(config: { default: keyof KnownGuards; guards: KnownGuards }) {
     this.#config = config
   }

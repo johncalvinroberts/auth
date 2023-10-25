@@ -50,7 +50,6 @@ export type SessionGuardEvents<User> = {
   'session_auth:credentials_verified': {
     uid: string
     user: User
-    password: string
   }
 
   /**

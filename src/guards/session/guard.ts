@@ -15,9 +15,9 @@ import { Exception, RuntimeException } from '@poppinss/utils'
 
 import debug from '../../auth/debug.js'
 import { RememberMeToken } from './token.js'
-import * as errors from '../../auth/errors.js'
 import type { GuardContract } from '../../auth/types.js'
 import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../../auth/symbols.js'
+import { AuthenticationException, InvalidCredentialsException } from '../../auth/errors.js'
 import type {
   SessionGuardEvents,
   SessionGuardConfig,
@@ -65,6 +65,11 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * Emitter to emit events
    */
   #emitter?: Emitter<SessionGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
+
+  /**
+   * Driver name of the guard
+   */
+  driverName: 'session' = 'session'
 
   /**
    * Whether or not the authentication has been attempted
@@ -161,13 +166,27 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   }
 
   /**
-   * Notifies about authenticatin failure and throws the exception
+   * Notifies about authentication failure and throws the exception
    */
   #authenticationFailed(error: Exception, sessionId: string): never {
     if (this.#emitter) {
       this.#emitter.emit('session_auth:authentication_failed', {
         error,
         sessionId: sessionId,
+      })
+    }
+
+    throw error
+  }
+
+  /**
+   * Notifies about login failure and throws the exception
+   */
+  #loginFailed(error: Exception, user: UserProvider[typeof PROVIDER_REAL_USER] | null): never {
+    if (this.#emitter) {
+      this.#emitter.emit('session_auth:login_failed', {
+        error,
+        user,
       })
     }
 
@@ -202,10 +221,79 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    */
   getUserOrFail(): UserProvider[typeof PROVIDER_REAL_USER] {
     if (!this.user) {
-      throw new errors.E_INVALID_AUTH_SESSION()
+      throw AuthenticationException.E_INVALID_AUTH_SESSION()
     }
 
     return this.user
+  }
+
+  /**
+   * Verifies user credentials and returns an instance of
+   * the user or throws "E_INVALID_CREDENTIALS" exception.
+   */
+  async verifyCredentials(
+    uid: string,
+    password: string
+  ): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
+    debug('session_guard: attempting to verify credentials for uid "%s"', uid)
+
+    /**
+     * Attempt to find a user by the uid and raise
+     * error when unable to find one
+     */
+    const providerUser = await this.#userProvider.findByUid(uid)
+    if (!providerUser) {
+      this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName), null)
+    }
+
+    /**
+     * Raise error when unable to verify password
+     */
+    const user = providerUser.getOriginal()
+
+    /**
+     * Raise error when unable to verify password
+     */
+    if (!(await providerUser.verifyPassword(password))) {
+      this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName), user)
+    }
+
+    /**
+     * Notify credentials have been verified
+     */
+    if (this.#emitter) {
+      this.#emitter.emit('session_auth:credentials_verified', {
+        uid,
+        user,
+      })
+    }
+
+    return user
+  }
+
+  /**
+   * Attempt to login a user after verifying their
+   * credentials.
+   */
+  async attempt(uid: string, password: string): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
+    const user = await this.verifyCredentials(uid, password)
+    return this.login(user)
+  }
+
+  /**
+   * Attempt to login a user using the user id. The
+   * user will be first fetched from the db before
+   * marking them as logged-in
+   */
+  async loginViaId(id: string | number): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
+    debug('session_guard: attempting to login user via id "%s"', id)
+
+    const providerUser = await this.#userProvider.findById(id)
+    if (!providerUser) {
+      this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName), null)
+    }
+
+    return this.login(providerUser.getOriginal())
   }
 
   /**
@@ -287,7 +375,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * Authenticates the HTTP request to ensure the
    * user is logged-in
    */
-  async authenticate() {
+  async authenticate(): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
     if (this.authenticationAttempted) {
       return this.getUserOrFail()
     }
@@ -319,7 +407,10 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
        * storage
        */
       if (!providerUser) {
-        this.#authenticationFailed(new errors.E_INVALID_AUTH_SESSION(), session.sessionId)
+        this.#authenticationFailed(
+          AuthenticationException.E_INVALID_AUTH_SESSION(),
+          session.sessionId
+        )
       }
 
       this.user = providerUser.getOriginal()
@@ -355,7 +446,10 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     const rememberMeCookie = this.#ctx.request.encryptedCookie(this.rememberMeKeyName)
     if (!rememberMeCookie || !this.#rememberMeTokenProvider) {
-      this.#authenticationFailed(new errors.E_INVALID_AUTH_SESSION(), session.sessionId)
+      this.#authenticationFailed(
+        AuthenticationException.E_INVALID_AUTH_SESSION(),
+        session.sessionId
+      )
     }
 
     debug('session_guard: authenticating user from remember me cookie')
@@ -366,9 +460,19 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      * is missing or invalid
      */
     const decodedToken = RememberMeToken.decode(rememberMeCookie)
+    if (!decodedToken) {
+      this.#authenticationFailed(
+        AuthenticationException.E_INVALID_AUTH_SESSION(),
+        session.sessionId
+      )
+    }
+
     const token = await this.#rememberMeTokenProvider.getTokenBySeries(decodedToken.series)
     if (!token || !token.verify(decodedToken.value)) {
-      this.#authenticationFailed(new errors.E_INVALID_AUTH_SESSION(), session.sessionId)
+      this.#authenticationFailed(
+        AuthenticationException.E_INVALID_AUTH_SESSION(),
+        session.sessionId
+      )
     }
 
     debug('session_guard: found valid remember me token')
@@ -379,7 +483,10 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     const providerUser = await this.#userProvider.findById(token.userId)
     if (!providerUser) {
-      this.#authenticationFailed(new errors.E_INVALID_AUTH_SESSION(), session.sessionId)
+      this.#authenticationFailed(
+        AuthenticationException.E_INVALID_AUTH_SESSION(),
+        session.sessionId
+      )
     }
 
     /**
@@ -462,10 +569,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
       await this.authenticate()
       return true
     } catch (error) {
-      if (
-        error instanceof errors.E_INVALID_AUTH_SESSION ||
-        error instanceof errors.E_INVALID_AUTH_TOKEN
-      ) {
+      if (error instanceof AuthenticationException) {
         return false
       }
 

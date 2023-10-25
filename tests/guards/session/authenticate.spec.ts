@@ -200,6 +200,28 @@ test.group('Session guard | authenticate', () => {
     assert.notEqual(parsedCookies.remember_web.value, token.value)
   })
 
+  test('throw error when remember me token is invalid', async () => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const ctx = new HttpContextFactory().create()
+    const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
+    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+
+    ctx.request.request.headers.cookie = defineCookies([
+      {
+        key: 'remember_web',
+        value: 'foobar',
+        type: 'encrypted',
+      },
+    ])
+
+    await sessionMiddleware.handle(ctx, async () => {
+      await sessionGuard.authenticate()
+    })
+  }).throws('Invalid or expired authentication session')
+
   test('throw error when remember me token has been expired', async () => {
     const db = await createDatabase()
     await createTables(db)
@@ -321,5 +343,31 @@ test.group('Session guard | authenticate', () => {
 
     assert.equal(authFailed.status, 'fulfilled')
     assert.equal(authenticateCall.status, 'fulfilled')
+  })
+
+  test('throw error when calling authenticate after check', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const emitter = createEmitter()
+    const ctx = new HttpContextFactory().create()
+    await FactoryUser.createWithDefaults()
+    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+
+    const [authFailed, authenticateCall] = await Promise.allSettled([
+      pEvent(emitter, 'session_auth:authentication_failed'),
+      sessionMiddleware.handle(ctx, async () => {
+        await sessionGuard.check()
+        await sessionGuard.authenticate()
+      }),
+    ])
+
+    assert.equal(authFailed.status, 'fulfilled')
+    assert.equal(authenticateCall.status, 'rejected')
+    assert.equal(
+      ('reason' in authenticateCall && authenticateCall.reason).message,
+      'Invalid or expired authentication session'
+    )
   })
 })
