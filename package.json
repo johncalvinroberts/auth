@@ -30,7 +30,6 @@
     "./types/core": "./build/src/core/types.js",
     "./session": "./build/src/guards/session/main.js",
     "./initialize_auth_middleware": "./build/src/auth/middleware/initialize_auth_middleware.js",
-    "./auth_middleware": "./build/src/auth/middleware/auth_middleware.js",
     "./types/session": "./build/src/guards/session/types.js"
   },
   "scripts": {

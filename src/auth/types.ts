@@ -83,6 +83,13 @@ export type InferAuthenticators<
 > = Awaited<ReturnType<Config['resolver']>>['guards']
 
 /**
+ * Infer events based upon the configure authenticators
+ */
+export type InferAuthEvents<KnownAuthenticators extends Record<string, GuardFactory>> = {
+  [K in keyof KnownAuthenticators]: ReturnType<KnownAuthenticators[K]>[typeof GUARD_KNOWN_EVENTS]
+}[keyof KnownAuthenticators]
+
+/**
  * Auth service is a singleton instance of the AuthManager
  * configured using the config stored within the user
  * app.

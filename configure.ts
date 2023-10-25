@@ -39,6 +39,16 @@ export async function configure(command: Configure) {
   const codemods = await command.createCodemods()
 
   /**
+   * Publish middleware to user application
+   */
+  await command.publishStub('middleware/auth_middleware.stub', {
+    entity: command.app.generators.createEntity('auth'),
+  })
+  await command.publishStub('middleware/guest_middleware.stub', {
+    entity: command.app.generators.createEntity('guest'),
+  })
+
+  /**
    * Register provider
    */
   await codemods.updateRcFile((rcFile) => {
@@ -56,7 +66,11 @@ export async function configure(command: Configure) {
   await codemods.registerMiddleware('named', [
     {
       name: 'auth',
-      path: '@adonisjs/auth/auth_middleware',
+      path: '#middleware/auth_middleware',
+    },
+    {
+      name: 'guest',
+      path: '#middleware/guest_middleware',
     },
   ])
 }

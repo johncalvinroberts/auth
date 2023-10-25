@@ -22,7 +22,6 @@ export class AuthManager<KnownGuards extends Record<string, GuardFactory>> {
    */
   #config: {
     default: keyof KnownGuards
-    loginRoute: string
     guards: KnownGuards
   }
 
@@ -33,7 +32,7 @@ export class AuthManager<KnownGuards extends Record<string, GuardFactory>> {
     return this.#config.default
   }
 
-  constructor(config: { default: keyof KnownGuards; loginRoute: string; guards: KnownGuards }) {
+  constructor(config: { default: keyof KnownGuards; guards: KnownGuards }) {
     this.#config = config
   }
 

@@ -148,11 +148,14 @@ test.group('Configure', (group) => {
 
     await assert.fileExists('config/auth.ts')
     await assert.fileExists('adonisrc.ts')
+    await assert.fileExists('app/middleware/auth_middleware.ts')
+    await assert.fileExists('app/middleware/guest_middleware.ts')
 
     await assert.fileContains(
       'start/kernel.ts',
       `export const { middleware } = router.named({
-  auth: () => import('@adonisjs/auth/auth_middleware')
+  guest: () => import('#middleware/guest_middleware'),
+  auth: () => import('#middleware/auth_middleware')
 })`
     )
     await assert.fileContains(

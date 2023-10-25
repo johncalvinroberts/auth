@@ -24,7 +24,6 @@ test.group('Authenticator', () => {
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
-      loginRoute: '/login',
       guards: {
         web: () => sessionGuard,
       },
@@ -41,7 +40,6 @@ test.group('Authenticator', () => {
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
-      loginRoute: '/login',
       guards: {
         web: () => sessionGuard,
       },
@@ -67,7 +65,6 @@ test.group('Authenticator', () => {
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
-      loginRoute: '/login',
       guards: {
         web: () => sessionGuard,
       },
@@ -99,7 +96,6 @@ test.group('Authenticator', () => {
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
-      loginRoute: '/login',
       guards: {
         web: () => sessionGuard,
       },

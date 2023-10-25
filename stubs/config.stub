@@ -2,6 +2,7 @@
   exports({ to: app.configPath('auth.ts') })
 }}}
 import { defineConfig, providers } from '@adonisjs/auth'
+import { InferAuthEvents, Authenticators } from '@adonisjs/auth/types'
 {{#if provider === 'lucid'}}
 /**
  * Using the "models/user" model to find users during
@@ -27,7 +28,6 @@ const userProvider = providers.db({
 
 const authConfig = defineConfig({
   default: 'web',
-  loginRoute: '/login',
   guards: {
     web: {} // to be configured
   }
@@ -36,4 +36,7 @@ const authConfig = defineConfig({
 export default authConfig
 declare module '@adonisjs/auth/types' {
   interface Authenticators extends InferAuthenticators<typeof authConfig> {}
+}
+declare module '@adonisjs/core/types' {
+  interface EventsList extends InferAuthEvents<Authenticators> {}
 }
