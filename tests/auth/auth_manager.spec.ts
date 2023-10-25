@@ -23,6 +23,7 @@ test.group('Auth manager', () => {
 
     const authManager = new AuthManager({
       default: 'web',
+      loginRoute: '/login',
       guards: {
         web: () => sessionGuard,
       },
