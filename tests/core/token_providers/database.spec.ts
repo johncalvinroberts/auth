@@ -37,7 +37,7 @@ test.group('Database token provider | createToken', () => {
     /**
      * Verifying the token public value matches the saved hash
      */
-    const { value } = TestToken.decode(token.value!)
+    const { value } = TestToken.decode(token.value!)!
     assert.isTrue(freshToken.verify(value))
   })
 
@@ -54,7 +54,7 @@ test.group('Database token provider | createToken', () => {
     /**
      * Verifying the token public value matches the saved hash
      */
-    const { value } = TestToken.decode(token.value!)
+    const { value } = TestToken.decode(token.value!)!
     assert.isTrue(freshToken!.verify(value))
   })
 
