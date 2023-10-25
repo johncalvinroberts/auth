@@ -48,6 +48,7 @@ export type SessionGuardEvents<User> = {
    * have been verified successfully.
    */
   'session_auth:credentials_verified': {
+    guardName: string
     uid: string
     user: User
   }
@@ -57,6 +58,7 @@ export type SessionGuardEvents<User> = {
    * user.
    */
   'session_auth:login_failed': {
+    guardName: string
     error: Exception
     user: User | null
   }
@@ -66,6 +68,7 @@ export type SessionGuardEvents<User> = {
    * a given user.
    */
   'session_auth:login_attempted': {
+    guardName: string
     user: User
   }
 
@@ -74,6 +77,7 @@ export type SessionGuardEvents<User> = {
    * successfully
    */
   'session_auth:login_succeeded': {
+    guardName: string
     user: User
     sessionId: string
     rememberMeToken?: RememberMeToken
@@ -83,6 +87,7 @@ export type SessionGuardEvents<User> = {
    * Attempting to authenticate the user
    */
   'session_auth:authentication_attempted': {
+    guardName: string
     sessionId: string
   }
 
@@ -90,6 +95,7 @@ export type SessionGuardEvents<User> = {
    * Authentication was successful
    */
   'session_auth:authentication_succeeded': {
+    guardName: string
     user: User
     sessionId: string
     rememberMeToken?: RememberMeToken
@@ -99,6 +105,7 @@ export type SessionGuardEvents<User> = {
    * Authentication failed
    */
   'session_auth:authentication_failed': {
+    guardName: string
     error: Exception
     sessionId: string
   }
@@ -108,7 +115,8 @@ export type SessionGuardEvents<User> = {
    * sucessfully
    */
   'session_auth:logged_out': {
-    user: User
+    guardName: string
+    user: User | null
     sessionId: string
   }
 }

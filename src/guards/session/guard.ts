@@ -171,6 +171,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   #authenticationFailed(error: Exception, sessionId: string): never {
     if (this.#emitter) {
       this.#emitter.emit('session_auth:authentication_failed', {
+        guardName: this.#name,
         error,
         sessionId: sessionId,
       })
@@ -185,6 +186,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   #loginFailed(error: Exception, user: UserProvider[typeof PROVIDER_REAL_USER] | null): never {
     if (this.#emitter) {
       this.#emitter.emit('session_auth:login_failed', {
+        guardName: this.#name,
         error,
         user,
       })
@@ -263,6 +265,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:credentials_verified', {
+        guardName: this.#name,
         uid,
         user,
       })
@@ -275,9 +278,13 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * Attempt to login a user after verifying their
    * credentials.
    */
-  async attempt(uid: string, password: string): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
+  async attempt(
+    uid: string,
+    password: string,
+    remember?: boolean
+  ): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
     const user = await this.verifyCredentials(uid, password)
-    return this.login(user)
+    return this.login(user, remember)
   }
 
   /**
@@ -285,7 +292,10 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * user will be first fetched from the db before
    * marking them as logged-in
    */
-  async loginViaId(id: string | number): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
+  async loginViaId(
+    id: string | number,
+    remember?: boolean
+  ): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
     debug('session_guard: attempting to login user via id "%s"', id)
 
     const providerUser = await this.#userProvider.findById(id)
@@ -293,7 +303,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
       this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName), null)
     }
 
-    return this.login(providerUser.getOriginal())
+    return this.login(providerUser.getOriginal(), remember)
   }
 
   /**
@@ -304,7 +314,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     remember: boolean = false
   ): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
     if (this.#emitter) {
-      this.#emitter.emit('session_auth:login_attempted', { user })
+      this.#emitter.emit('session_auth:login_attempted', { user, guardName: this.#name })
     }
 
     const providerUser = await this.#userProvider.createUserForGuard(user)
@@ -362,6 +372,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:login_succeeded', {
+        guardName: this.#name,
         user,
         sessionId: session.sessionId,
         rememberMeToken: token,
@@ -388,6 +399,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:authentication_attempted', {
+        guardName: this.#name,
         sessionId: session.sessionId,
       })
     }
@@ -423,6 +435,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
        */
       if (this.#emitter) {
         this.#emitter.emit('session_auth:authentication_succeeded', {
+          guardName: this.#name,
           sessionId: session.sessionId,
           user: this.user!,
         })
@@ -507,6 +520,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:authentication_succeeded', {
+        guardName: this.#name,
         sessionId: session.sessionId,
         user: this.user!,
         rememberMeToken: token,
@@ -575,5 +589,44 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
 
       throw error
     }
+  }
+
+  /**
+   * Logout user and revoke remember me token (if any)
+   */
+  async logout() {
+    debug('session_auth: logging out')
+    const session = this.#getSession()
+
+    /**
+     * Clear client side state
+     */
+    session.forget(this.sessionKeyName)
+    this.#ctx.response.clearCookie(this.rememberMeKeyName)
+
+    /**
+     * Notify the user has been logged out
+     */
+    if (this.#emitter) {
+      this.#emitter.emit('session_auth:logged_out', {
+        guardName: this.#name,
+        user: this.user || null,
+        sessionId: session.sessionId,
+      })
+    }
+
+    const rememberMeCookie = this.#ctx.request.encryptedCookie(this.rememberMeKeyName)
+    if (!rememberMeCookie || !this.#rememberMeTokenProvider) {
+      return
+    }
+
+    debug('session_auth: decoding remember me token')
+    const decodedToken = RememberMeToken.decode(rememberMeCookie)
+    if (!decodedToken) {
+      return
+    }
+
+    debug('session_auth: deleting remember me token')
+    await this.#rememberMeTokenProvider.deleteTokenBySeries(decodedToken.series)
   }
 }

@@ -16,6 +16,7 @@ import { Emitter } from '@adonisjs/core/events'
 import { BaseModel } from '@adonisjs/lucid/orm'
 import { CookieClient } from '@adonisjs/core/http'
 import { Database } from '@adonisjs/lucid/database'
+import { Encryption } from '@adonisjs/core/encryption'
 import { Scrypt } from '@adonisjs/hash/drivers/scrypt'
 import { AppFactory } from '@adonisjs/core/factories/app'
 import setCookieParser, { CookieMap } from 'set-cookie-parser'
@@ -24,6 +25,8 @@ import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
 import { SessionGuardEvents } from '../src/guards/session/types.js'
 import { FactoryUser } from '../factories/lucid_user_provider.js'
+
+export const encryption: Encryption = new EncryptionFactory().create()
 
 /**
  * Creates a fresh instance of AdonisJS hash module
@@ -141,12 +144,14 @@ export function pEvent<T extends Record<string | symbol | number, any>, K extend
  */
 export function parseCookies(setCookiesHeader: string | string[]) {
   const cookies = setCookieParser(setCookiesHeader, { map: true })
-  const client = new CookieClient(new EncryptionFactory().create())
+  const client = new CookieClient(encryption)
 
   return Object.keys(cookies).reduce((result, key) => {
+    const cookie = cookies[key]
+
     result[key] = {
-      ...cookies[key],
-      value: client.parse(cookies[key].name, cookies[key].value),
+      ...cookie,
+      value: cookie.value ? client.parse(cookie.name, cookie.value) : cookie.value,
     }
     return result
   }, {} as CookieMap)
@@ -162,7 +167,7 @@ export function defineCookies(
     type: 'plain' | 'encrypted' | 'signed'
   }[]
 ) {
-  const client = new CookieClient(new EncryptionFactory().create())
+  const client = new CookieClient(encryption)
 
   return cookies
     .reduce((result, cookie) => {
