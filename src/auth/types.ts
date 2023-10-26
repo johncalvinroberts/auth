@@ -88,11 +88,23 @@ export type InferAuthenticators<
 > = Awaited<ReturnType<Config['resolver']>>['guards']
 
 /**
+ * Helper to convert union to intersection
+ */
+type UnionToIntersection<U> = (U extends any ? (k: U) => void : never) extends (k: infer I) => void
+  ? I
+  : never
+
+/**
  * Infer events based upon the configure authenticators
  */
-export type InferAuthEvents<KnownAuthenticators extends Record<string, GuardFactory>> = {
-  [K in keyof KnownAuthenticators]: ReturnType<KnownAuthenticators[K]>[typeof GUARD_KNOWN_EVENTS]
-}[keyof KnownAuthenticators]
+export type InferAuthEvents<KnownAuthenticators extends Record<string, GuardFactory>> =
+  UnionToIntersection<
+    {
+      [K in keyof KnownAuthenticators]: ReturnType<
+        KnownAuthenticators[K]
+      >[typeof GUARD_KNOWN_EVENTS]
+    }[keyof KnownAuthenticators]
+  >
 
 /**
  * Auth service is a singleton instance of the AuthManager

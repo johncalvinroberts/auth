@@ -23,7 +23,7 @@ type DatabaseTokenRow = {
   created_at: Date
   updated_at: Date
   expires_at: Date | null
-}
+} & Record<string, any>
 
 /**
  * A generic implementation to read tokens from the database

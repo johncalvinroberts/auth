@@ -16,6 +16,9 @@ import { HttpContext } from '@adonisjs/core/http'
  * made to authenticate an HTTP request
  */
 export class AuthenticationException extends Exception {
+  static status?: number | undefined = 401
+  static code?: string | undefined = 'E_UNAUTHORIZED_ACCESS'
+
   /**
    * Raises authentication exception when session guard
    * is unable to authenticate the request
@@ -126,6 +129,7 @@ export class AuthenticationException extends Exception {
 export class InvalidCredentialsException extends Exception {
   static message: string = 'Invalid credentials'
   static code: string = 'E_INVALID_CREDENTIALS'
+  static status?: number | undefined = 400
 
   static E_INVALID_CREDENTIALS(guardDriverName: string) {
     return new InvalidCredentialsException(InvalidCredentialsException.message, {

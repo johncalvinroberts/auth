@@ -7,7 +7,7 @@
  * file that was distributed with this source code.
  */
 
-import { Exception } from '@poppinss/utils'
+import type { Exception } from '@poppinss/utils'
 
 import type { RememberMeToken } from './token.js'
 import type {
