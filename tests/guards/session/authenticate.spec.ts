@@ -381,7 +381,9 @@ test.group('Session guard | authenticate', () => {
     const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
 
     assert.deepEqual(await sessionGuard.authenticateAsClient(user), {
-      auth_web: user.id,
+      session: {
+        auth_web: user.id,
+      },
     })
   })
 })

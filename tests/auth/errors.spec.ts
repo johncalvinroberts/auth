@@ -127,6 +127,21 @@ test.group('Errors | AuthenticationException', () => {
     assert.equal(ctx.response.getStatus(), 401)
     assert.equal(ctx.response.getBody(), 'Unauthorized access')
   })
+
+  test('handle basic auth exception with a prompt', async ({ assert }) => {
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+    const error = AuthenticationException.E_INVALID_BASIC_AUTH_CREDENTIALS()
+
+    const ctx = new HttpContextFactory().create()
+    await sessionMiddleware.handle(ctx, async () => {
+      return error.handle(error, ctx)
+    })
+
+    assert.equal(
+      ctx.response.getHeader('WWW-Authenticate'),
+      `Basic realm="Authenticate", charset="UTF-8"`
+    )
+  })
 })
 
 test.group('Errors | InvalidCredentialsException', () => {
