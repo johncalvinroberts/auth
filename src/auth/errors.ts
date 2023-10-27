@@ -31,6 +31,18 @@ export class AuthenticationException extends Exception {
     })
   }
 
+  /**
+   * Raises authentication exception when session guard
+   * is unable to authenticate the request
+   */
+  static E_INVALID_BASIC_AUTH_CREDENTIALS() {
+    return new AuthenticationException('Invalid basic auth credentials', {
+      code: 'E_INVALID_BASIC_AUTH_CREDENTIALS',
+      status: 401,
+      guardDriverName: 'basic_auth',
+    })
+  }
+
   guardDriverName: string
   redirectTo?: string
   identifier = 'auth.authenticate'
@@ -103,6 +115,12 @@ export class AuthenticationException extends Exception {
           })
           break
       }
+    },
+    basic_auth: (message, _, ctx) => {
+      ctx.response
+        .status(this.status)
+        .header('WWW-Authenticate', `Basic realm="Authenticate", charset="UTF-8"`)
+        .send(message)
     },
   }
 

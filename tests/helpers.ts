@@ -25,6 +25,7 @@ import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
 import { SessionGuardEvents } from '../src/guards/session/types.js'
 import { FactoryUser } from '../factories/lucid_user_provider.js'
+import { BasicAuthGuardEvents } from '../src/guards/basic_auth/types.js'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 
@@ -114,7 +115,7 @@ export function createEmitter() {
   }
 
   const app = new AppFactory().create(test.context.fs.baseUrl, () => {})
-  return new Emitter<SessionGuardEvents<FactoryUser>>(app)
+  return new Emitter<SessionGuardEvents<FactoryUser> & BasicAuthGuardEvents<FactoryUser>>(app)
 }
 
 /**

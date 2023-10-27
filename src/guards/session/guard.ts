@@ -425,6 +425,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
         )
       }
 
+      debug('session_guard: marking user with id "%s" as authenticated', providerUser.getId())
       this.user = providerUser.getOriginal()
       this.isAuthenticated = true
       this.isLoggedOut = false
@@ -510,6 +511,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     session.put(this.sessionKeyName, userId)
     session.regenerate()
 
+    debug('session_guard: marking user with id "%s" as authenticated', userId)
     this.user = providerUser.getOriginal()
     this.isAuthenticated = true
     this.isLoggedOut = false

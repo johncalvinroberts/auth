@@ -370,4 +370,18 @@ test.group('Session guard | authenticate', () => {
       'Invalid or expired authentication session'
     )
   })
+
+  test('get authentication session via authenticateAsClient', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const emitter = createEmitter()
+    const ctx = new HttpContextFactory().create()
+    const user = await FactoryUser.createWithDefaults()
+    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+
+    assert.deepEqual(await sessionGuard.authenticateAsClient(user), {
+      auth_web: user.id,
+    })
+  })
 })

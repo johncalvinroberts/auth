@@ -12,6 +12,10 @@ configure({
       files: ['tests/guards/session/**/*.spec.ts'],
     },
     {
+      name: 'basic_auth',
+      files: ['tests/guards/basic_auth/**/*.spec.ts'],
+    },
+    {
       name: 'auth',
       files: ['tests/auth/**/*.spec.ts'],
     },

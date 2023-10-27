@@ -30,6 +30,7 @@
     "./core/token_providers/*": "./build/src/core/token_providers/*.js",
     "./types/core": "./build/src/core/types.js",
     "./session": "./build/src/guards/session/main.js",
+    "./basic_auth": "./build/src/guards/basic_auth/main.js",
     "./initialize_auth_middleware": "./build/src/auth/middleware/initialize_auth_middleware.js",
     "./types/session": "./build/src/guards/session/types.js"
   },
@@ -82,6 +83,7 @@
     "@japa/runner": "^3.0.4",
     "@japa/snapshot": "^2.0.0",
     "@swc/core": "1.3.82",
+    "@types/basic-auth": "^1.1.5",
     "@types/luxon": "^3.3.3",
     "@types/node": "^20.8.7",
     "@types/set-cookie-parser": "^2.4.5",
@@ -131,7 +133,8 @@
     ]
   },
   "dependencies": {
-    "@poppinss/utils": "^6.5.0"
+    "@poppinss/utils": "^6.5.0",
+    "basic-auth": "^2.0.1"
   },
   "peerDependencies": {
     "@adonisjs/core": "^6.1.5-31",
