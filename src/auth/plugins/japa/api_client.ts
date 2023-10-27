@@ -9,8 +9,11 @@
 
 /// <reference types="@adonisjs/session/plugins/api_client" />
 
+import type { PluginFn } from '@japa/runner/types'
 import { ApiClient, ApiRequest } from '@japa/api-client'
 import type { ApplicationService } from '@adonisjs/core/types'
+
+import debug from '../../debug.js'
 import type { Authenticators, GuardContract, GuardFactory } from '../../types.js'
 
 declare module '@japa/api-client' {
@@ -58,51 +61,62 @@ declare module '@japa/api-client' {
  * HTTP requests using the Japa API client
  */
 export const authApiClient = (app: ApplicationService) => {
-  ApiRequest.macro('loginAs', function (this: ApiRequest, user) {
-    this.authData = {
-      guard: '__default__',
-      user: user,
-    }
-    return this
-  })
+  const pluginFn: PluginFn = function () {
+    debug('installing auth api client plugin')
 
-  ApiRequest.macro('withGuard', function <
-    K extends keyof Authenticators,
-    Self extends ApiRequest,
-  >(this: Self, guard: K) {
-    return {
-      loginAs: (user) => {
-        this.authData = {
-          guard,
-          user: user,
-        }
-        return this
-      },
-    }
-  })
+    ApiRequest.macro('loginAs', function (this: ApiRequest, user) {
+      this.authData = {
+        guard: '__default__',
+        user: user,
+      }
+      return this
+    })
 
-  /**
-   * Hook into the request and login the user
-   */
-  ApiClient.setup(async (request) => {
-    const auth = await app.container.make('auth.manager')
-    const authData = request['authData']
-    if (!authData) {
-      return
-    }
+    ApiRequest.macro('withGuard', function <
+      K extends keyof Authenticators,
+      Self extends ApiRequest,
+    >(this: Self, guard: K) {
+      return {
+        loginAs: (user) => {
+          this.authData = {
+            guard,
+            user: user,
+          }
+          return this
+        },
+      }
+    })
 
-    const client = auth.createAuthenticatorClient()
-    const guard = authData.guard === '__default__' ? client.use() : client.use(authData.guard)
-    const requestData = await (guard as GuardContract<unknown>).authenticateAsClient(authData.user)
+    /**
+     * Hook into the request and login the user
+     */
+    ApiClient.setup(async (request) => {
+      const auth = await app.container.make('auth.manager')
+      const authData = request['authData']
+      if (!authData) {
+        return
+      }
 
-    if (requestData.headers) {
-      request.headers(requestData.headers)
-    }
-    if (requestData.session) {
-      request.withSession(requestData.session)
-    }
-    if (requestData.cookies) {
-      request.cookies(requestData.cookies)
-    }
-  })
+      const client = auth.createAuthenticatorClient()
+      const guard = authData.guard === '__default__' ? client.use() : client.use(authData.guard)
+      const requestData = await (guard as GuardContract<unknown>).authenticateAsClient(
+        authData.user
+      )
+
+      if (requestData.headers) {
+        debug('defining headers with api client request %O', requestData.headers)
+        request.headers(requestData.headers)
+      }
+      if (requestData.session) {
+        debug('defining session with api client request %O', requestData.session)
+        request.withSession(requestData.session)
+      }
+      if (requestData.cookies) {
+        debug('defining session with api client request %O', requestData.session)
+        request.cookies(requestData.cookies)
+      }
+    })
+  }
+
+  return pluginFn
 }
