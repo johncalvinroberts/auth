@@ -14,6 +14,15 @@ import type { AuthManager } from './auth_manager.js'
 import type { GUARD_KNOWN_EVENTS } from './symbols.js'
 
 /**
+ * The client response for authentication.
+ */
+export interface AuthClientResponse {
+  headers?: Record<string, any>
+  cookies?: Record<string, any>
+  session?: Record<string, any>
+}
+
+/**
  * A set of properties a guard must implement.
  */
 export interface GuardContract<User> {
@@ -45,6 +54,13 @@ export interface GuardContract<User> {
    * exception
    */
   check(): Promise<boolean>
+
+  /**
+   * The method is used to authenticate the user as
+   * client. This method should return cookies,
+   * headers, or session state.
+   */
+  authenticateAsClient(user: User): Promise<AuthClientResponse>
 
   /**
    * Authenticates the current request and throws

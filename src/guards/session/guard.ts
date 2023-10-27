@@ -15,7 +15,7 @@ import { Exception, RuntimeException } from '@poppinss/utils'
 
 import debug from '../../auth/debug.js'
 import { RememberMeToken } from './token.js'
-import type { GuardContract } from '../../auth/types.js'
+import type { AuthClientResponse, GuardContract } from '../../auth/types.js'
 import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../../auth/symbols.js'
 import { AuthenticationException, InvalidCredentialsException } from '../../auth/errors.js'
 import type {
@@ -628,5 +628,23 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
 
     debug('session_auth: deleting remember me token')
     await this.#rememberMeTokenProvider.deleteTokenBySeries(decodedToken.series)
+  }
+
+  /**
+   * Returns the session state for the user to be
+   * logged-in as a client
+   */
+  async authenticateAsClient(
+    user: UserProvider[typeof PROVIDER_REAL_USER]
+  ): Promise<{ session: Record<string, string | number> }> {
+    const providerUser = await this.#userProvider.createUserForGuard(user)
+    const userId = providerUser.getId()
+
+    debug('session_guard: returning client session for user id "%s"', userId)
+    return {
+      session: {
+        [this.sessionKeyName]: userId,
+      },
+    }
   }
 }

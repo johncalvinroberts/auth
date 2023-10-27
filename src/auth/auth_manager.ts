@@ -11,6 +11,7 @@ import type { HttpContext } from '@adonisjs/core/http'
 
 import type { GuardFactory } from './types.js'
 import { Authenticator } from './authenticator.js'
+import { AuthenticatorClient } from './authenticator_client.js'
 
 /**
  * Auth manager exposes the API to register and manage authentication
@@ -41,5 +42,12 @@ export class AuthManager<KnownGuards extends Record<string, GuardFactory>> {
    */
   createAuthenticator(ctx: HttpContext) {
     return new Authenticator<KnownGuards>(ctx, this.#config)
+  }
+
+  /**
+   * Creates an instance of the authenticator client
+   */
+  createAuthenticatorClient() {
+    return new AuthenticatorClient<KnownGuards>(this.#config)
   }
 }

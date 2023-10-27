@@ -22,6 +22,7 @@
     ".": "./build/index.js",
     "./types": "./build/src/auth/types.js",
     "./auth_provider": "./build/providers/auth_provider.js",
+     "./plugins/api_client": "./build/src/auth/plugins/japa/api_client.js",
     "./services/main": "./build/services/auth.js",
     "./core/token": "./build/src/core/token.js",
     "./core/guard_user": "./build/src/core/guard_user.js",
@@ -74,6 +75,7 @@
     "@adonisjs/tsconfig": "^1.1.8",
     "@commitlint/cli": "^18.0.0",
     "@commitlint/config-conventional": "^18.0.0",
+    "@japa/api-client": "^2.0.0",
     "@japa/assert": "^2.0.0",
     "@japa/expect-type": "^2.0.0",
     "@japa/file-system": "^2.0.0",
@@ -132,15 +134,19 @@
     "@poppinss/utils": "^6.5.0"
   },
   "peerDependencies": {
-    "@adonisjs/core": "^6.1.5-30",
+    "@adonisjs/core": "^6.1.5-31",
     "@adonisjs/lucid": "^19.0.0-3",
-    "@adonisjs/session": "^7.0.0-13"
+    "@adonisjs/session": "^7.0.0-13",
+    "@japa/api-client": "^2.0.0"
   },
   "peerDependenciesMeta": {
     "@adonisjs/lucid": {
       "optional": true
     },
     "@adonisjs/session": {
+      "optional": true
+    },
+    "@japa/api-client": {
       "optional": true
     }
   }
