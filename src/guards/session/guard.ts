@@ -15,7 +15,7 @@ import { Exception, RuntimeException } from '@poppinss/utils'
 
 import debug from '../../auth/debug.js'
 import { RememberMeToken } from './token.js'
-import type { AuthClientResponse, GuardContract } from '../../auth/types.js'
+import type { GuardContract } from '../../auth/types.js'
 import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../../auth/symbols.js'
 import { AuthenticationException, InvalidCredentialsException } from '../../auth/errors.js'
 import type {
