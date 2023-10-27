@@ -1,6 +1,6 @@
 {
   "name": "@adonisjs/auth",
-  "version": "9.0.0-5",
+  "version": "9.0.0-6",
   "description": "Official authentication provider for Adonis framework",
   "type": "module",
   "main": "build/index.js",
@@ -22,7 +22,7 @@
     ".": "./build/index.js",
     "./types": "./build/src/auth/types.js",
     "./auth_provider": "./build/providers/auth_provider.js",
-     "./plugins/api_client": "./build/src/auth/plugins/japa/api_client.js",
+    "./plugins/api_client": "./build/src/auth/plugins/japa/api_client.js",
     "./services/main": "./build/services/auth.js",
     "./core/token": "./build/src/core/token.js",
     "./core/guard_user": "./build/src/core/guard_user.js",
