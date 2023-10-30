@@ -69,7 +69,6 @@ test.group('Define config', () => {
 
     const authConfigProvider = defineConfig({
       default: 'web',
-      loginRoute: '/login',
       guards: {
         web: sessionGuard({
           provider: lucidConfigProvider,
@@ -96,7 +95,6 @@ test.group('Define config', () => {
 
     const authConfigProvider = defineConfig({
       default: 'web',
-      loginRoute: '/login',
       guards: {
         web: sessionGuard({
           provider: lucidConfigProvider,
