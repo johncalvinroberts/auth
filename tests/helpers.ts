@@ -176,8 +176,8 @@ export function defineCookies(
         cookie.type === 'plain'
           ? client.encode(cookie.key, cookie.value)
           : cookie.type === 'encrypted'
-          ? client.encrypt(cookie.key, cookie.value)
-          : client.sign(cookie.key, cookie.value)
+            ? client.encrypt(cookie.key, cookie.value)
+            : client.sign(cookie.key, cookie.value)
 
       result.push(`${cookie.key}=${value}`)
       return result

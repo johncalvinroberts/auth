@@ -57,9 +57,7 @@ class DatabaseUser<RealUser extends Record<string, any>> extends GuardUser<RealU
 
     if (!password) {
       throw new RuntimeException(
-        `Cannot verify password during login. The value of column "${
-          this.#options.passwordColumnName
-        }" is undefined or null`
+        `Cannot verify password during login. The value of column "${this.#options.passwordColumnName}" is undefined or null`
       )
     }
 
