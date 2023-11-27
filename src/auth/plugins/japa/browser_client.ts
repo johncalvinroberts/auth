@@ -61,6 +61,34 @@ export const authBrowserClient = (app: ApplicationService) => {
 
     decoratorsCollection.register({
       context(context) {
+        context.withGuard = function (guardName) {
+          return {
+            async loginAs(user) {
+              const client = auth.createAuthenticatorClient()
+              const guard = client.use(guardName) as GuardContract<unknown>
+              const requestData = await guard.authenticateAsClient(user)
+
+              if (requestData.headers) {
+                throw new RuntimeException(
+                  `Cannot use "${guard.driverName}" guard with browser client`
+                )
+              }
+
+              if (requestData.cookies) {
+                debug('defining cookies with browser context %O', requestData.cookies)
+                Object.keys(requestData.cookies).forEach((cookie) => {
+                  context.setCookie(cookie, requestData.cookies![cookie])
+                })
+              }
+
+              if (requestData.session) {
+                debug('defining session with browser context %O', requestData.session)
+                context.setSession(requestData.session)
+              }
+            },
+          }
+        }
+
         context.loginAs = async function (user) {
           const client = auth.createAuthenticatorClient()
           const guard = client.use() as GuardContract<unknown>
