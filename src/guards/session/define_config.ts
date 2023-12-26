@@ -57,7 +57,7 @@ export function sessionGuard<UserProvider extends SessionUserProviderContract<un
           guard.withRememberMeTokens(tokensProvider)
         }
 
-        return guard.withEmitter(emitter)
+        return guard.setEmitter(emitter)
       }
     },
   }

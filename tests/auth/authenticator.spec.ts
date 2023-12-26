@@ -20,7 +20,7 @@ test.group('Authenticator', () => {
   test('create authenticator with guards', async ({ assert, expectTypeOf }) => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
@@ -36,7 +36,7 @@ test.group('Authenticator', () => {
   test('access guard using its name', async ({ assert, expectTypeOf }) => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
@@ -60,7 +60,7 @@ test.group('Authenticator', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const authenticator = new Authenticator(ctx, {
@@ -92,7 +92,7 @@ test.group('Authenticator', () => {
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const authenticator = new Authenticator(ctx, {

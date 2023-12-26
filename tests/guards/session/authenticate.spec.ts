@@ -33,7 +33,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [authSucceeded] = await Promise.all([
@@ -63,7 +63,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [authFailed, authenticateCall] = await Promise.allSettled([
@@ -110,7 +110,7 @@ test.group('Session guard | authenticate', () => {
     const sessionGuard = new SessionGuardFactory()
       .create(ctx)
       .withRememberMeTokens(tokensProvider)
-      .withEmitter(emitter)
+      .setEmitter(emitter)
 
     const token = RememberMeToken.create(user.id, '1 year')
     await tokensProvider.createToken(token)
@@ -331,7 +331,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [authFailed, authenticateCall] = await Promise.allSettled([
@@ -352,7 +352,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [authFailed, authenticateCall] = await Promise.allSettled([
@@ -378,7 +378,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
 
     assert.deepEqual(await sessionGuard.authenticateAsClient(user), {
       session: {

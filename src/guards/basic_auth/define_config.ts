@@ -43,7 +43,7 @@ export function basicAuthGuard<UserProvider extends UserProviderContract<unknown
        */
       return (ctx) => {
         const guard = new BasicAuthGuard<UserProvider>(guardName, ctx, provider)
-        return guard.withEmitter(emitter)
+        return guard.setEmitter(emitter)
       }
     },
   }

@@ -25,7 +25,7 @@ test.group('BasicAuth guard | authenticate', () => {
       password: await new Scrypt({}).make('secret'),
     })
 
-    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).withEmitter(emitter)
+    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).setEmitter(emitter)
 
     ctx.request.request.headers.authorization = `Basic ${Buffer.from(
       `${user.email}:secret`
@@ -54,7 +54,7 @@ test.group('BasicAuth guard | authenticate', () => {
       password: await new Scrypt({}).make('secret'),
     })
 
-    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).withEmitter(emitter)
+    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).setEmitter(emitter)
 
     ctx.request.request.headers.authorization = `Basic ${Buffer.from(
       `${user.email}:secret`
@@ -80,7 +80,7 @@ test.group('BasicAuth guard | authenticate', () => {
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).withEmitter(emitter)
+    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).setEmitter(emitter)
 
     const [authFailed, authentication] = await Promise.allSettled([
       pEvent(emitter, 'basic_auth:authentication_failed'),
@@ -108,7 +108,7 @@ test.group('BasicAuth guard | authenticate', () => {
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).withEmitter(emitter)
+    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).setEmitter(emitter)
 
     ctx.request.request.headers.authorization = `Basic ${Buffer.from(`foo:secret`).toString(
       'base64'
@@ -143,7 +143,7 @@ test.group('BasicAuth guard | authenticate', () => {
     const user = await FactoryUser.createWithDefaults({
       password: await new Scrypt({}).make('secret'),
     })
-    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).withEmitter(emitter)
+    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).setEmitter(emitter)
 
     ctx.request.request.headers.authorization = `Basic ${Buffer.from(
       `${user.email}:wrongpassword`
@@ -175,7 +175,7 @@ test.group('BasicAuth guard | authenticate', () => {
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).withEmitter(emitter)
+    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).setEmitter(emitter)
 
     const [authFailed, authentication] = await Promise.allSettled([
       pEvent(emitter, 'basic_auth:authentication_failed'),
@@ -208,7 +208,7 @@ test.group('BasicAuth guard | authenticate', () => {
     const user = await FactoryUser.createWithDefaults({
       password: await new Scrypt({}).make('secret'),
     })
-    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).withEmitter(emitter)
+    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).setEmitter(emitter)
 
     ctx.request.request.headers.authorization = `Basic ${Buffer.from(
       `${user.email}:wrongpassword`
@@ -244,7 +244,7 @@ test.group('BasicAuth guard | authenticate', () => {
       password: await new Scrypt({}).make('secret'),
     })
     const ctx = new HttpContextFactory().create()
-    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).withEmitter(emitter)
+    const basicAuthGuard = new BasicAuthGuardFactory().create(ctx).setEmitter(emitter)
     await basicAuthGuard.authenticateAsClient(user)
   }).throws('Cannot authenticate as a client when using basic auth')
 })

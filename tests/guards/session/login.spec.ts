@@ -45,7 +45,7 @@ test.group('Session guard | login', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [loginAttempted, loginSucceeded] = await Promise.all([

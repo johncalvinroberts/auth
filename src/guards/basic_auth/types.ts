@@ -8,6 +8,7 @@
  */
 
 import { Exception } from '@poppinss/utils'
+import type { HttpContext } from '@adonisjs/core/http'
 
 /**
  * Events emitted by the basic auth guard
@@ -18,6 +19,7 @@ export type BasicAuthGuardEvents<User> = {
    * have been verified successfully.
    */
   'basic_auth:credentials_verified': {
+    ctx: HttpContext
     guardName: string
     uid: string
     user: User
@@ -27,6 +29,7 @@ export type BasicAuthGuardEvents<User> = {
    * Attempting to authenticate the user
    */
   'basic_auth:authentication_attempted': {
+    ctx: HttpContext
     guardName: string
   }
 
@@ -34,6 +37,7 @@ export type BasicAuthGuardEvents<User> = {
    * Authentication was successful
    */
   'basic_auth:authentication_succeeded': {
+    ctx: HttpContext
     guardName: string
     user: User
   }
@@ -42,6 +46,7 @@ export type BasicAuthGuardEvents<User> = {
    * Authentication failed
    */
   'basic_auth:authentication_failed': {
+    ctx: HttpContext
     guardName: string
     error: Exception
   }

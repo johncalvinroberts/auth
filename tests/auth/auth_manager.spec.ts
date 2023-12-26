@@ -19,7 +19,7 @@ test.group('Auth manager', () => {
   test('create authenticator from auth manager', async ({ assert, expectTypeOf }) => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
 
     const authManager = new AuthManager({
       default: 'web',

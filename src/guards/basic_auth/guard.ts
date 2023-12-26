@@ -8,8 +8,8 @@
  */
 
 import auth from 'basic-auth'
-import type { Emitter } from '@adonisjs/core/events'
 import type { HttpContext } from '@adonisjs/core/http'
+import type { EmitterLike } from '@adonisjs/core/types/events'
 import { Exception, RuntimeException } from '@poppinss/utils'
 
 import debug from '../../auth/debug.js'
@@ -46,7 +46,7 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
   /**
    * Emitter to emit events
    */
-  #emitter?: Emitter<BasicAuthGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
+  #emitter?: EmitterLike<BasicAuthGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
 
   /**
    * Driver name of the guard
@@ -89,6 +89,7 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
   #authenticationFailed(error: Exception): never {
     if (this.#emitter) {
       this.#emitter.emit('basic_auth:authentication_failed', {
+        ctx: this.#ctx,
         guardName: this.#name,
         error,
       })
@@ -101,7 +102,7 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
    * Register an event emitter to listen for global events for
    * authentication lifecycle.
    */
-  withEmitter(emitter: Emitter<any>): this {
+  setEmitter(emitter: EmitterLike<any>): this {
     this.#emitter = emitter
     return this
   }
@@ -169,6 +170,7 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
     this.authenticationAttempted = true
     if (this.#emitter) {
       this.#emitter.emit('basic_auth:authentication_attempted', {
+        ctx: this.#ctx,
         guardName: this.#name,
       })
     }
@@ -193,6 +195,7 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
 
     if (this.#emitter) {
       this.#emitter.emit('basic_auth:authentication_succeeded', {
+        ctx: this.#ctx,
         guardName: this.#name,
         user: this.user,
       })

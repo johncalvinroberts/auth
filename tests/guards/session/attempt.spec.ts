@@ -26,7 +26,7 @@ test.group('Session guard | attempt', () => {
     const user = await FactoryUser.createWithDefaults({
       password: await new Scrypt({}).make('secret'),
     })
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [credentialsVerified] = await Promise.all([
@@ -56,7 +56,7 @@ test.group('Session guard | attempt', () => {
     const user = await FactoryUser.createWithDefaults({
       password: await new Scrypt({}).make('secret'),
     })
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [loginFailed, attemptResult] = await Promise.allSettled([
@@ -79,7 +79,7 @@ test.group('Session guard | attempt', () => {
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [loginFailed, attemptResult] = await Promise.allSettled([

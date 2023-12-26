@@ -9,9 +9,9 @@
 
 /// <reference types="@adonisjs/session/session_middleware" />
 
-import { Emitter } from '@adonisjs/core/events'
 import type { HttpContext } from '@adonisjs/core/http'
 import { Exception, RuntimeException } from '@poppinss/utils'
+import type { EmitterLike } from '@adonisjs/core/types/events'
 
 import debug from '../../auth/debug.js'
 import { RememberMeToken } from './token.js'
@@ -64,7 +64,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   /**
    * Emitter to emit events
    */
-  #emitter?: Emitter<SessionGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
+  #emitter?: EmitterLike<SessionGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
 
   /**
    * Driver name of the guard
@@ -171,6 +171,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   #authenticationFailed(error: Exception, sessionId: string): never {
     if (this.#emitter) {
       this.#emitter.emit('session_auth:authentication_failed', {
+        ctx: this.#ctx,
         guardName: this.#name,
         error,
         sessionId: sessionId,
@@ -186,6 +187,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   #loginFailed(error: Exception, user: UserProvider[typeof PROVIDER_REAL_USER] | null): never {
     if (this.#emitter) {
       this.#emitter.emit('session_auth:login_failed', {
+        ctx: this.#ctx,
         guardName: this.#name,
         error,
         user,
@@ -212,7 +214,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * Register an event emitter to listen for global events for
    * authentication lifecycle.
    */
-  withEmitter(emitter: Emitter<any>): this {
+  setEmitter(emitter: EmitterLike<any>): this {
     this.#emitter = emitter
     return this
   }
@@ -265,6 +267,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:credentials_verified', {
+        ctx: this.#ctx,
         guardName: this.#name,
         uid,
         user,
@@ -314,7 +317,11 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     remember: boolean = false
   ): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
     if (this.#emitter) {
-      this.#emitter.emit('session_auth:login_attempted', { user, guardName: this.#name })
+      this.#emitter.emit('session_auth:login_attempted', {
+        ctx: this.#ctx,
+        user,
+        guardName: this.#name,
+      })
     }
 
     const providerUser = await this.#userProvider.createUserForGuard(user)
@@ -372,6 +379,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:login_succeeded', {
+        ctx: this.#ctx,
         guardName: this.#name,
         user,
         sessionId: session.sessionId,
@@ -399,6 +407,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:authentication_attempted', {
+        ctx: this.#ctx,
         guardName: this.#name,
         sessionId: session.sessionId,
       })
@@ -436,6 +445,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
        */
       if (this.#emitter) {
         this.#emitter.emit('session_auth:authentication_succeeded', {
+          ctx: this.#ctx,
           guardName: this.#name,
           sessionId: session.sessionId,
           user: this.user!,
@@ -522,6 +532,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:authentication_succeeded', {
+        ctx: this.#ctx,
         guardName: this.#name,
         sessionId: session.sessionId,
         user: this.user!,
@@ -611,6 +622,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     if (this.#emitter) {
       this.#emitter.emit('session_auth:logged_out', {
+        ctx: this.#ctx,
         guardName: this.#name,
         user: this.user || null,
         sessionId: session.sessionId,

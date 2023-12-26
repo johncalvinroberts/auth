@@ -102,7 +102,7 @@ test.group('Session guard | logout', () => {
     const ctx = new HttpContextFactory().create()
     const emitter = createEmitter()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await sessionMiddleware.handle(ctx, async () => {
