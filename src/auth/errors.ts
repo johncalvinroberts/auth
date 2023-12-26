@@ -92,7 +92,7 @@ export class AuthenticationException extends Exception {
         case 'html':
         case null:
           ctx.session.flashExcept(['_csrf'])
-          ctx.session.flash({ errors: { [error.identifier]: [message] } })
+          ctx.session.flashErrors({ [error.identifier]: [message] })
           ctx.response.redirect(error.redirectTo || '/', true)
           break
         case 'json':
@@ -201,7 +201,7 @@ export class InvalidCredentialsException extends Exception {
         case 'html':
         case null:
           ctx.session.flashExcept(['_csrf'])
-          ctx.session.flash({ errors: { [this.identifier]: [message] } })
+          ctx.session.flashErrors({ [this.identifier]: [message] })
           ctx.response.redirect().withQs().back()
           break
         case 'json':

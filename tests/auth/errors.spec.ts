@@ -25,7 +25,7 @@ test.group('Errors | AuthenticationException', () => {
     })
 
     assert.deepEqual(ctx.session.responseFlashMessages.all(), {
-      errors: { 'auth.authenticate': ['Unauthorized access'] },
+      errorsBag: { 'auth.authenticate': ['Unauthorized access'] },
       input: {},
     })
     assert.equal(ctx.response.getHeader('location'), '/')
@@ -46,7 +46,7 @@ test.group('Errors | AuthenticationException', () => {
     })
 
     assert.deepEqual(ctx.session.responseFlashMessages.all(), {
-      errors: { 'auth.authenticate': ['Unauthorized access'] },
+      errorsBag: { 'auth.authenticate': ['Unauthorized access'] },
       input: {},
     })
     assert.equal(ctx.response.getHeader('location'), '/login')
@@ -155,7 +155,7 @@ test.group('Errors | InvalidCredentialsException', () => {
     })
 
     assert.deepEqual(ctx.session.responseFlashMessages.all(), {
-      errors: { 'auth.login': ['Invalid credentials'] },
+      errorsBag: { 'auth.login': ['Invalid credentials'] },
       input: {},
     })
     assert.equal(ctx.response.getHeader('location'), '/')
