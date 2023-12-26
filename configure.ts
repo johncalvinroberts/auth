@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import { presetAuth } from '@adonisjs/presets/auth'
 import type Configure from '@adonisjs/core/commands/configure'
 
 /**
@@ -14,40 +15,10 @@ import type Configure from '@adonisjs/core/commands/configure'
  */
 export async function configure(command: Configure) {
   const codemods = await command.createCodemods()
+  // let guard: string | undefined = command.parsedFlags.guard
 
-  /**
-   * Publish middleware to user application
-   */
-  await command.publishStub('middleware/auth_middleware.stub', {
-    entity: command.app.generators.createEntity('auth'),
+  await presetAuth(codemods, command.app, {
+    guard: 'session',
+    userProvider: 'lucid',
   })
-  await command.publishStub('middleware/guest_middleware.stub', {
-    entity: command.app.generators.createEntity('guest'),
-  })
-
-  /**
-   * Register provider
-   */
-  await codemods.updateRcFile((rcFile) => {
-    rcFile.addProvider('@adonisjs/auth/auth_provider')
-  })
-
-  /**
-   * Register middleware
-   */
-  await codemods.registerMiddleware('router', [
-    {
-      path: '@adonisjs/auth/initialize_auth_middleware',
-    },
-  ])
-  await codemods.registerMiddleware('named', [
-    {
-      name: 'auth',
-      path: '#middleware/auth_middleware',
-    },
-    {
-      name: 'guest',
-      path: '#middleware/guest_middleware',
-    },
-  ])
 }

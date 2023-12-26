@@ -8,7 +8,6 @@
  */
 
 export { configure } from './configure.js'
-export { stubsRoot } from './stubs/main.js'
 export * as symbols from './src/auth/symbols.js'
 export { AuthManager } from './src/auth/auth_manager.js'
 export { Authenticator } from './src/auth/authenticator.js'

@@ -20,37 +20,9 @@ test.group('Configure', (group) => {
     context.fs.basePath = fileURLToPath(BASE_URL)
   })
 
-  test('register provider', async ({ fs, assert }) => {
-    const ignitor = new IgnitorFactory()
-      .withCoreProviders()
-      .withCoreConfig()
-      .create(BASE_URL, {
-        importer: (filePath) => {
-          if (filePath.startsWith('./') || filePath.startsWith('../')) {
-            return import(new URL(filePath, BASE_URL).href)
-          }
+  group.each.disableTimeout()
 
-          return import(filePath)
-        },
-      })
-
-    await fs.create('start/kernel.ts', `router.use([])`)
-    await fs.createJson('tsconfig.json', {})
-    await fs.create('adonisrc.ts', `export default defineConfig({}) {}`)
-
-    const app = ignitor.createApp('web')
-    await app.init()
-    await app.boot()
-
-    const ace = await app.container.make('ace')
-    const command = await ace.create(Configure, ['../../../index.js'])
-    await command.exec()
-
-    await assert.fileExists('adonisrc.ts')
-    await assert.fileContains('adonisrc.ts', '@adonisjs/auth/auth_provider')
-  }).timeout(60 * 1000)
-
-  test('register middleware', async ({ fs, assert }) => {
+  test('register provider and middleware', async ({ fs, assert }) => {
     const ignitor = new IgnitorFactory()
       .withCoreProviders()
       .withCoreConfig()
@@ -66,11 +38,9 @@ test.group('Configure', (group) => {
 
     await fs.create(
       'start/kernel.ts',
-      `
-    router.use([])
+      `router.use([])
     export const { middleware } = router.named({
-    })
-    `
+    })`
     )
     await fs.createJson('tsconfig.json', {})
     await fs.create('adonisrc.ts', `export default defineConfig({}) {}`)
@@ -80,10 +50,10 @@ test.group('Configure', (group) => {
     await app.boot()
 
     const ace = await app.container.make('ace')
-    const command = await ace.create(Configure, ['../../../index.js'])
+    const command = await ace.create(Configure, ['../../../index.js', '--guard=session'])
     await command.exec()
 
-    await assert.fileExists('adonisrc.ts')
+    await assert.fileContains('adonisrc.ts', '@adonisjs/auth/auth_provider')
     await assert.fileExists('app/middleware/auth_middleware.ts')
     await assert.fileExists('app/middleware/guest_middleware.ts')
 
@@ -98,5 +68,5 @@ test.group('Configure', (group) => {
       'start/kernel.ts',
       `router.use([() => import('@adonisjs/auth/initialize_auth_middleware')])`
     )
-  }).timeout(60 * 1000)
+  })
 })
