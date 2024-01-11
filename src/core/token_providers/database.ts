@@ -13,22 +13,11 @@ import debug from '../../auth/debug.js'
 import type { DatabaseTokenProviderOptions, TokenProviderContract } from '../types.js'
 
 /**
- * The representation of a token inside the database
- */
-type DatabaseTokenRow = {
-  series: string
-  user_id: string | number
-  type: string
-  token: string
-  created_at: Date
-  updated_at: Date
-  expires_at: Date | null
-} & Record<string, any>
-
-/**
  * A generic implementation to read tokens from the database
  */
-export abstract class DatabaseTokenProvider<Token> implements TokenProviderContract<Token> {
+export abstract class DatabaseTokenProvider<DatabaseTokenRow extends Record<string, any>, Token>
+  implements TokenProviderContract<Token>
+{
   constructor(
     /**
      * Reference to the database query builder needed to
@@ -53,7 +42,7 @@ export abstract class DatabaseTokenProvider<Token> implements TokenProviderContr
    * Abstract method to prepare a token from the database
    * row
    */
-  protected abstract prepareToken(dbRow: DatabaseTokenRow): Token
+  protected abstract prepareToken(dbRow: DatabaseTokenRow): Token | null
 
   /**
    * Returns an instance of the query builder
@@ -99,29 +88,11 @@ export abstract class DatabaseTokenProvider<Token> implements TokenProviderContr
       .first()
 
     if (!token) {
-      debug('db_token_provider:: token %O', token)
+      debug('db_token_provider: cannot find token for series %s', series)
       return null
     }
 
-    if (typeof token.expires_at === 'number') {
-      token.expires_at = new Date(token.expires_at)
-    }
-    if (typeof token.created_at === 'number') {
-      token.created_at = new Date(token.created_at)
-    }
-    if (typeof token.updated_at === 'number') {
-      token.updated_at = new Date(token.updated_at)
-    }
-
-    debug('db_token_provider:: token %O', token)
-
-    /**
-     * Return null when token has been expired
-     */
-    if (token.expires_at && token.expires_at instanceof Date && token.expires_at < new Date()) {
-      return null
-    }
-
+    debug('db_token_provider: token found %O', token)
     return this.prepareToken(token)
   }
 
@@ -137,18 +108,14 @@ export abstract class DatabaseTokenProvider<Token> implements TokenProviderContr
   /**
    * Updates token hash and expiry
    */
-  async updateTokenBySeries(series: string, hash: string, expiresAt: Date): Promise<void> {
-    const updatePayload = {
-      token: hash,
-      updated_at: new Date(),
-      expires_at: expiresAt,
-    }
+  async updateTokenBySeries(series: string, token: Token): Promise<void> {
+    const parsedToken = this.parseToken(token)
 
-    debug('db_token_provider: updating token by series %s: %O', series, updatePayload)
+    debug('db_token_provider: updating token by series %s: %O', series, parsedToken)
 
     await this.getQueryBuilder()
       .from(this.options.table)
       .where('series', series)
-      .update(updatePayload)
+      .update({ ...parsedToken })
   }
 }

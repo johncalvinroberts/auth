@@ -24,19 +24,6 @@ import type {
  * to perform authentication.
  */
 class LucidUser<RealUser extends InstanceType<LucidAuthenticatable>> extends GuardUser<RealUser> {
-  #options: { passwordColumnName: Extract<keyof RealUser, string> }
-  #hasher: Hash
-
-  constructor(
-    realUser: RealUser,
-    hasher: Hash,
-    options: { passwordColumnName: Extract<keyof RealUser, string> }
-  ) {
-    super(realUser)
-    this.#hasher = hasher
-    this.#options = options
-  }
-
   /**
    * @inheritdoc
    */
@@ -56,20 +43,6 @@ class LucidUser<RealUser extends InstanceType<LucidAuthenticatable>> extends Gua
     }
 
     return id
-  }
-
-  /**
-   * @inheritdoc
-   */
-  async verifyPassword(plainTextPassword: string): Promise<boolean> {
-    const password = this.realUser[this.#options.passwordColumnName]
-    if (!password) {
-      throw new RuntimeException(
-        `Cannot verify password during login. The value of column "${this.#options.passwordColumnName}" is undefined or null`
-      )
-    }
-
-    return this.#hasher.verify(password as string, plainTextPassword)
   }
 }
 
@@ -139,7 +112,7 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
     }
 
     debug('lucid_user_provider: converting user object to guard user %O', user)
-    return new LucidUser(user, this.hasher, this.options)
+    return new LucidUser(user)
   }
 
   /**
@@ -158,7 +131,7 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
       return null
     }
 
-    return new LucidUser(user, this.hasher, this.options)
+    return new LucidUser(user)
   }
 
   /**
@@ -180,7 +153,7 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
       return null
     }
 
-    return new LucidUser(user, this.hasher, this.options)
+    return new LucidUser(user)
   }
 
   /**
@@ -193,7 +166,14 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
   ): Promise<LucidUser<InstanceType<UserModel>> | null> {
     const user = await this.findByUid(uid)
     if (user) {
-      if (await user.verifyPassword(password)) {
+      const passwordHash = user.getOriginal()[this.options.passwordColumnName]
+      if (!passwordHash) {
+        throw new RuntimeException(
+          `Cannot verify password during login. The value of column "${this.options.passwordColumnName}" is undefined or null`
+        )
+      }
+
+      if (await this.hasher.verify(passwordHash as string, password)) {
         return user
       }
       return null

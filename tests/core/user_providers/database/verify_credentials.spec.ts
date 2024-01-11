@@ -9,9 +9,9 @@
 
 import { test } from '@japa/runner'
 import convertHrtime from 'convert-hrtime'
-import { FactoryUser } from '../../../../factories/lucid_user_provider.js'
+import { FactoryUser } from '../../../../factories/core/lucid_user_provider.js'
 import { createDatabase, createTables, getHasher } from '../../../helpers.js'
-import { DatabaseUserProviderFactory } from '../../../../factories/database_user_provider.js'
+import { DatabaseUserProviderFactory } from '../../../../factories/core/database_user_provider.js'
 
 test.group('Database user provider | verifyCredentials', () => {
   test('return user when email and password are correct', async ({ assert, expectTypeOf }) => {
@@ -65,6 +65,22 @@ test.group('Database user provider | verifyCredentials', () => {
     const userByEmail = await dbUserProvider.verifyCredentials('bar@bar.com', 'secret')
     assert.isNull(userByEmail)
   })
+
+  test('throw error when password is missing', async () => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    await FactoryUser.createWithDefaults({
+      email: 'foo@bar.com',
+      username: 'foo',
+      password: null,
+    })
+
+    const dbUserProvider = new DatabaseUserProviderFactory().create(db)
+    await dbUserProvider.verifyCredentials('foo@bar.com', 'secret')
+  }).throws(
+    'Cannot verify password during login. The value of column "password" is undefined or null'
+  )
 
   test('prevent timing attacks when email or password are invalid', async ({ assert }) => {
     const db = await createDatabase()

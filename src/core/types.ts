@@ -15,62 +15,6 @@ import type { PROVIDER_REAL_USER } from '../auth/symbols.js'
 import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
 
 /**
- * A token represents an opaque token issued to a client
- * to perform a specific task.
- *
- * The raw value of a token is only visible at the time of
- * issuing it and one must persist hash to the database.
- */
-export interface TokenContract {
-  /**
-   * Token type to uniquely identify a bucket of tokens
-   */
-  readonly type: string
-
-  /**
-   * The plain text value. Only exists when the token is first
-   * created
-   */
-  value?: string
-
-  /**
-   * Additional metadata associated with the token.
-   */
-  metaData?: Record<string, any>
-
-  /**
-   * The token hash for persisting the token in a database
-   */
-  hash: string
-
-  /**
-   * A unique readable series counter to find the token inside the
-   * database.
-   */
-  series: string
-
-  /**
-   * Timestamp when the token was first persisted
-   */
-  createdAt: Date
-
-  /**
-   * Timestamp when the token was updated
-   */
-  updatedAt: Date
-
-  /**
-   * Timestamp when the token will expire
-   */
-  expiresAt?: Date
-
-  /**
-   * Verifies the raw text value against the hash
-   */
-  verify(value: string): boolean
-}
-
-/**
  * The UserProvider is used to lookup a user for authentication
  */
 export interface UserProviderContract<RealUser> {
@@ -121,7 +65,7 @@ export interface TokenProviderContract<Token> {
   /**
    * Updates a token by the series counter
    */
-  updateTokenBySeries(series: string, hash: string, expiresAt: Date): Promise<void>
+  updateTokenBySeries(series: string, token: Token): Promise<void>
 
   /**
    * Creates a new token and persists it to the database

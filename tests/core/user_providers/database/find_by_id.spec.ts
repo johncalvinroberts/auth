@@ -9,8 +9,8 @@
 
 import { test } from '@japa/runner'
 import { createDatabase, createTables } from '../../../helpers.js'
-import { FactoryUser } from '../../../../factories/lucid_user_provider.js'
-import { DatabaseUserProviderFactory } from '../../../../factories/database_user_provider.js'
+import { FactoryUser } from '../../../../factories/core/lucid_user_provider.js'
+import { DatabaseUserProviderFactory } from '../../../../factories/core/database_user_provider.js'
 
 test.group('Database user provider | findById', () => {
   test('find a user using primary key', async ({ assert, expectTypeOf }) => {

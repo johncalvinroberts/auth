@@ -23,12 +23,6 @@ export abstract class GuardUser<RealUser> {
   }
 
   /**
-   * Verifies the plain text password against the user password
-   * hash
-   */
-  abstract verifyPassword(plainTextPassword: string): Promise<boolean>
-
-  /**
    * Returns a value to uniquely identify the user.
    */
   abstract getId(): number | string

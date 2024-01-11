@@ -21,16 +21,10 @@ import type { DatabaseUserProviderOptions, UserProviderContract } from '../types
  * to perform authentication.
  */
 class DatabaseUser<RealUser extends Record<string, any>> extends GuardUser<RealUser> {
-  #options: { id: string; passwordColumnName: string }
-  #hasher: Hash
+  #options: { id: string }
 
-  constructor(
-    realUser: RealUser,
-    hasher: Hash,
-    options: { id: string; passwordColumnName: string }
-  ) {
+  constructor(realUser: RealUser, options: { id: string }) {
     super(realUser)
-    this.#hasher = hasher
     this.#options = options
   }
 
@@ -47,21 +41,6 @@ class DatabaseUser<RealUser extends Record<string, any>> extends GuardUser<RealU
     }
 
     return id
-  }
-
-  /**
-   * @inheritdoc
-   */
-  async verifyPassword(plainTextPassword: string): Promise<boolean> {
-    const password = this.realUser[this.#options.passwordColumnName]
-
-    if (!password) {
-      throw new RuntimeException(
-        `Cannot verify password during login. The value of column "${this.#options.passwordColumnName}" is undefined or null`
-      )
-    }
-
-    return this.#hasher.verify(password, plainTextPassword)
   }
 }
 
@@ -113,7 +92,7 @@ export abstract class BaseDatabaseUserProvider<RealUser extends Record<string, a
     }
 
     debug('db_user_provider: converting user object to guard user %O', user)
-    return new DatabaseUser(user, this.hasher, this.options)
+    return new DatabaseUser(user, this.options)
   }
 
   /**
@@ -159,8 +138,16 @@ export abstract class BaseDatabaseUserProvider<RealUser extends Record<string, a
     password: string
   ): Promise<DatabaseUser<RealUser> | null> {
     const user = await this.findByUid(uid)
+
     if (user) {
-      if (await user.verifyPassword(password)) {
+      const passwordHash = user.getOriginal()[this.options.passwordColumnName]
+      if (!passwordHash) {
+        throw new RuntimeException(
+          `Cannot verify password during login. The value of column "${this.options.passwordColumnName}" is undefined or null`
+        )
+      }
+
+      if (await this.hasher.verify(passwordHash, password)) {
         return user
       }
       return null

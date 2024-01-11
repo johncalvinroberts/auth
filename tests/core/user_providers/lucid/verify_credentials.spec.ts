@@ -10,7 +10,10 @@
 import { test } from '@japa/runner'
 import convertHrtime from 'convert-hrtime'
 import { createDatabase, createTables, getHasher } from '../../../helpers.js'
-import { FactoryUser, LucidUserProviderFactory } from '../../../../factories/lucid_user_provider.js'
+import {
+  FactoryUser,
+  LucidUserProviderFactory,
+} from '../../../../factories/core/lucid_user_provider.js'
 
 test.group('Lucid user provider | verifyCredentials', () => {
   test('return user when email and password are correct', async ({ assert, expectTypeOf }) => {
@@ -61,6 +64,22 @@ test.group('Lucid user provider | verifyCredentials', () => {
     const userByEmail = await lucidUserProvider.verifyCredentials('baz@bar.com', 'secret')
     assert.isNull(userByEmail)
   })
+
+  test('throw error when password is missing', async () => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    await FactoryUser.create({
+      email: 'foo@bar.com',
+      username: 'foo',
+      password: null,
+    })
+
+    const lucidUserProvider = new LucidUserProviderFactory().create()
+    await lucidUserProvider.verifyCredentials('foo@bar.com', 'secret')
+  }).throws(
+    'Cannot verify password during login. The value of column "password" is undefined or null'
+  )
 
   test('prevent timing attacks when email or password are invalid', async ({ assert }) => {
     const db = await createDatabase()
