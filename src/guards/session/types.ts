@@ -63,7 +63,6 @@ export type SessionGuardEvents<User> = {
     ctx: HttpContext
     guardName: string
     error: Exception
-    user: User | null
   }
 
   /**

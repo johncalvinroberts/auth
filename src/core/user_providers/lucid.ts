@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import type { Hash } from '@adonisjs/core/hash'
 import { RuntimeException } from '@poppinss/utils'
 
 import debug from '../../auth/debug.js'
@@ -23,6 +24,19 @@ import type {
  * to perform authentication.
  */
 class LucidUser<RealUser extends InstanceType<LucidAuthenticatable>> extends GuardUser<RealUser> {
+  #options: { passwordColumnName: Extract<keyof RealUser, string> }
+  #hasher: Hash
+
+  constructor(
+    realUser: RealUser,
+    hasher: Hash,
+    options: { passwordColumnName: Extract<keyof RealUser, string> }
+  ) {
+    super(realUser)
+    this.#hasher = hasher
+    this.#options = options
+  }
+
   /**
    * @inheritdoc
    */
@@ -48,7 +62,14 @@ class LucidUser<RealUser extends InstanceType<LucidAuthenticatable>> extends Gua
    * @inheritdoc
    */
   async verifyPassword(plainTextPassword: string): Promise<boolean> {
-    return this.realUser.verifyPasswordForAuth(plainTextPassword)
+    const password = this.realUser[this.#options.passwordColumnName]
+    if (!password) {
+      throw new RuntimeException(
+        `Cannot verify password during login. The value of column "${this.#options.passwordColumnName}" is undefined or null`
+      )
+    }
+
+    return this.#hasher.verify(password as string, plainTextPassword)
   }
 }
 
@@ -67,6 +88,11 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
   protected model?: UserModel
 
   constructor(
+    /**
+     * Hasher is used to verify plain text passwords
+     */
+    protected hasher: Hash,
+
     /**
      * Lucid provider options
      */
@@ -113,7 +139,7 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
     }
 
     debug('lucid_user_provider: converting user object to guard user %O', user)
-    return new LucidUser(user)
+    return new LucidUser(user, this.hasher, this.options)
   }
 
   /**
@@ -132,7 +158,7 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
       return null
     }
 
-    return new LucidUser(user)
+    return new LucidUser(user, this.hasher, this.options)
   }
 
   /**
@@ -154,6 +180,29 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
       return null
     }
 
-    return new LucidUser(user)
+    return new LucidUser(user, this.hasher, this.options)
+  }
+
+  /**
+   * Find a user by uid and verify their password. This method prevents
+   * timing attacks.
+   */
+  async verifyCredentials(
+    uid: string | number,
+    password: string
+  ): Promise<LucidUser<InstanceType<UserModel>> | null> {
+    const user = await this.findByUid(uid)
+    if (user) {
+      if (await user.verifyPassword(password)) {
+        return user
+      }
+      return null
+    }
+
+    /**
+     * Hashing the password to prevent timing attacks.
+     */
+    await this.hasher.make(password)
+    return null
   }
 }

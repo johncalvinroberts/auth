@@ -33,11 +33,13 @@ test.group('sessionGuard', () => {
             default: FactoryUser,
           }
         },
+        passwordColumnName: 'password',
         uids: ['email'],
       }),
     })
 
     app.container.bind('emitter', () => createEmitter() as any)
+    app.container.bind('hash', () => new HashManagerFactory().create())
 
     const sessionFactory = await sessionGuardProvider.resolver('web', app)
     assert.isFunction(sessionFactory)
@@ -61,6 +63,7 @@ test.group('sessionGuard', () => {
             default: FactoryUser,
           }
         },
+        passwordColumnName: 'password',
         uids: ['email'],
       }),
       tokens: tokensProvider.db({

@@ -33,8 +33,11 @@ test.group('Define config | providers', () => {
           default: FactoryUser,
         }
       },
+      passwordColumnName: 'password',
       uids: ['email'],
     })
+
+    app.container.bind('hash', () => new HashManagerFactory().create())
 
     const lucidProvider = await lucidConfigProvider.resolver(app)
     assert.instanceOf(lucidProvider, LucidUserProvider)
@@ -64,6 +67,7 @@ test.group('Define config', () => {
           default: FactoryUser,
         }
       },
+      passwordColumnName: 'password',
       uids: ['email'],
     })
 
@@ -90,6 +94,7 @@ test.group('Define config', () => {
           default: FactoryUser,
         }
       },
+      passwordColumnName: 'password',
       uids: ['email'],
     })
 

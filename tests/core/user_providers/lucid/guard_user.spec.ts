@@ -27,6 +27,22 @@ test.group('Lucid user provider | LucidUser', () => {
     assert.isFalse(await user!.verifyPassword('foobar'))
   })
 
+  test('throw error when value of password column is missing', async () => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    await FactoryUser.createWithDefaults({
+      password: null,
+    })
+
+    const lucidUserProvider = new LucidUserProviderFactory().create()
+    const user = await lucidUserProvider.findByUid('foo@bar.com')
+
+    await user!.verifyPassword('secret')
+  }).throws(
+    'Cannot verify password during login. The value of column "password" is undefined or null'
+  )
+
   test('throw error when user primary key is missing', async () => {
     const db = await createDatabase()
     await createTables(db)

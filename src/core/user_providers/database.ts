@@ -149,4 +149,27 @@ export abstract class BaseDatabaseUserProvider<RealUser extends Record<string, a
 
     return this.createUserForGuard(user)
   }
+
+  /**
+   * Find a user by uid and verify their password. This method prevents
+   * timing attacks.
+   */
+  async verifyCredentials(
+    uid: string | number,
+    password: string
+  ): Promise<DatabaseUser<RealUser> | null> {
+    const user = await this.findByUid(uid)
+    if (user) {
+      if (await user.verifyPassword(password)) {
+        return user
+      }
+      return null
+    }
+
+    /**
+     * Hashing the password to prevent timing attacks.
+     */
+    await this.hasher.make(password)
+    return null
+  }
 }

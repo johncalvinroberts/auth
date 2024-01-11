@@ -82,13 +82,18 @@ export const providers: {
       const db = await app.container.make('lucid.db')
       const hasher = await app.container.make('hash')
       const { DatabaseUserProvider } = await import('./user_providers/main.js')
-      return new DatabaseUserProvider(db, hasher.use(), config)
+      return new DatabaseUserProvider(
+        db,
+        config.hasher ? hasher.use(config.hasher) : hasher.use(),
+        config
+      )
     })
   },
   lucid(config) {
-    return configProvider.create(async () => {
+    return configProvider.create(async (app) => {
       const { LucidUserProvider } = await import('./user_providers/main.js')
-      return new LucidUserProvider(config)
+      const hasher = await app.container.make('hash')
+      return new LucidUserProvider(config.hasher ? hasher.use(config.hasher) : hasher.use(), config)
     })
   },
 }

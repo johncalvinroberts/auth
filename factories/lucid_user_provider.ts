@@ -42,10 +42,6 @@ export class FactoryUser extends BaseModel {
 
   @column()
   declare password: string | null
-
-  async verifyPasswordForAuth(plainTextPassword: string) {
-    return new Hash(new Scrypt({})).verify(this.password!, plainTextPassword)
-  }
 }
 
 export class TestLucidUserProvider<
@@ -60,7 +56,7 @@ export class TestLucidUserProvider<
  */
 export class LucidUserProviderFactory {
   createForModel<Model extends LucidAuthenticatable>(options: LucidUserProviderOptions<Model>) {
-    return new TestLucidUserProvider({
+    return new TestLucidUserProvider(new Hash(new Scrypt({})), {
       ...options,
     })
   }
@@ -72,6 +68,7 @@ export class LucidUserProviderFactory {
           default: FactoryUser,
         }
       },
+      passwordColumnName: 'password',
       uids: ['email', 'username'],
     })
   }

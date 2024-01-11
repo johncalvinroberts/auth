@@ -129,27 +129,14 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
     debug('basic_auth_guard: attempting to verify credentials for uid "%s"', uid)
 
     /**
-     * Attempt to find a user by the uid and raise
-     * error when unable to find one
+     * Attempt to verify credentials and raise error if they are invalid
      */
-    const providerUser = await this.#userProvider.findByUid(uid)
+    const providerUser = await this.#userProvider.verifyCredentials(uid, password)
     if (!providerUser) {
       this.#authenticationFailed(AuthenticationException.E_INVALID_BASIC_AUTH_CREDENTIALS())
     }
 
-    /**
-     * Raise error when unable to verify password
-     */
-    const user = providerUser.getOriginal()
-
-    /**
-     * Raise error when unable to verify password
-     */
-    if (!(await providerUser.verifyPassword(password))) {
-      this.#authenticationFailed(AuthenticationException.E_INVALID_BASIC_AUTH_CREDENTIALS())
-    }
-
-    return user
+    return providerUser.getOriginal()
   }
 
   /**

@@ -184,13 +184,12 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   /**
    * Notifies about login failure and throws the exception
    */
-  #loginFailed(error: Exception, user: UserProvider[typeof PROVIDER_REAL_USER] | null): never {
+  #loginFailed(error: Exception): never {
     if (this.#emitter) {
       this.#emitter.emit('session_auth:login_failed', {
         ctx: this.#ctx,
         guardName: this.#name,
         error,
-        user,
       })
     }
 
@@ -242,25 +241,15 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     debug('session_guard: attempting to verify credentials for uid "%s"', uid)
 
     /**
-     * Attempt to find a user by the uid and raise
-     * error when unable to find one
+     * Attempt to verify credentials and raise error if they
+     * are invalid
      */
-    const providerUser = await this.#userProvider.findByUid(uid)
+    const providerUser = await this.#userProvider.verifyCredentials(uid, password)
     if (!providerUser) {
-      this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName), null)
+      this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName))
     }
 
-    /**
-     * Raise error when unable to verify password
-     */
     const user = providerUser.getOriginal()
-
-    /**
-     * Raise error when unable to verify password
-     */
-    if (!(await providerUser.verifyPassword(password))) {
-      this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName), user)
-    }
 
     /**
      * Notify credentials have been verified
@@ -303,7 +292,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
 
     const providerUser = await this.#userProvider.findById(id)
     if (!providerUser) {
-      this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName), null)
+      this.#loginFailed(InvalidCredentialsException.E_INVALID_CREDENTIALS(this.driverName))
     }
 
     return this.login(providerUser.getOriginal(), remember)

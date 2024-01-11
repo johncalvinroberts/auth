@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import type { HashersList } from '@adonisjs/core/types'
 import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 
 import type { GuardUser } from './guard_user.js'
@@ -94,6 +95,12 @@ export interface UserProviderContract<RealUser> {
    * authenticating user from their session.
    */
   findById(value: string | number): Promise<GuardUser<RealUser> | null>
+
+  /**
+   * Find a user by uid and verify their password. This method prevents
+   * timing attacks.
+   */
+  verifyCredentials(uid: string | number, password: string): Promise<GuardUser<RealUser> | null>
 }
 
 /**
@@ -126,19 +133,20 @@ export interface TokenProviderContract<Token> {
  * A lucid model that can be used during authentication
  */
 export type LucidAuthenticatable = LucidModel & {
-  new (): LucidRow & {
-    /**
-     * Verify the plain text password against the user password
-     * hash
-     */
-    verifyPasswordForAuth(plainTextPassword: string): Promise<boolean>
-  }
+  // new (): LucidRow & {}
+  new (): LucidRow
 }
 
 /**
  * Options accepted by the Lucid user provider
  */
 export type LucidUserProviderOptions<Model extends LucidAuthenticatable> = {
+  /**
+   * Define the hasher to use to hash and verify
+   * passwords
+   */
+  hasher?: keyof HashersList
+
   /**
    * Optionally define the connection to use when making database
    * queries
@@ -160,6 +168,11 @@ export type LucidUserProviderOptions<Model extends LucidAuthenticatable> = {
   model: () => Promise<{ default: Model }>
 
   /**
+   * Column name to read the hashed password
+   */
+  passwordColumnName: Extract<keyof InstanceType<Model>, string>
+
+  /**
    * An array of uids to use when finding a user for login. Make
    * sure all fields can be used to uniquely lookup a user.
    */
@@ -170,6 +183,12 @@ export type LucidUserProviderOptions<Model extends LucidAuthenticatable> = {
  * Options accepted by the Database user provider
  */
 export type DatabaseUserProviderOptions<RealUser extends Record<string, any>> = {
+  /**
+   * Define the hasher to use to hash and verify
+   * passwords
+   */
+  hasher?: keyof HashersList
+
   /**
    * Optionally define the connection to use when making database
    * queries
