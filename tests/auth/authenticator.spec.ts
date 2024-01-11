@@ -72,7 +72,7 @@ test.group('Authenticator', () => {
 
     await sessionMiddleware.handle(ctx, async () => {
       ctx.session.put('auth_web', user.id)
-      await authenticator.authenticateUsing()
+      await authenticator.authenticate()
     })
 
     assert.instanceOf(authenticator.user, FactoryUser)
@@ -82,6 +82,62 @@ test.group('Authenticator', () => {
     assert.equal(authenticator.authenticatedViaGuard, 'web')
     assert.isTrue(authenticator.isAuthenticated)
     assert.isTrue(authenticator.authenticationAttempted)
+  })
+
+  test('authenticate using the guard instance', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const emitter = createEmitter()
+    const ctx = new HttpContextFactory().create()
+    const user = await FactoryUser.createWithDefaults()
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+
+    const authenticator = new Authenticator(ctx, {
+      default: 'web',
+      guards: {
+        web: () => sessionGuard,
+      },
+    })
+
+    await sessionMiddleware.handle(ctx, async () => {
+      ctx.session.put('auth_web', user.id)
+      await authenticator.use().authenticate()
+    })
+
+    assert.isUndefined(authenticator.user)
+    assert.isUndefined(authenticator.authenticatedViaGuard)
+    assert.isFalse(authenticator.isAuthenticated)
+    assert.isFalse(authenticator.authenticationAttempted)
+  })
+
+  test('access properties without authenticating user', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const emitter = createEmitter()
+    const ctx = new HttpContextFactory().create()
+    const user = await FactoryUser.createWithDefaults()
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+
+    const authenticator = new Authenticator(ctx, {
+      default: 'web',
+      guards: {
+        web: () => sessionGuard,
+      },
+    })
+
+    await sessionMiddleware.handle(ctx, async () => {
+      ctx.session.put('auth_web', user.id)
+    })
+
+    assert.isUndefined(authenticator.user)
+    assert.isUndefined(authenticator.authenticatedViaGuard)
+    assert.isFalse(authenticator.isAuthenticated)
+    assert.isFalse(authenticator.authenticationAttempted)
+    assert.throws(() => authenticator.getUserOrFail(), 'Invalid or expired authentication session')
   })
 
   test('throw error when unable to authenticate', async ({ assert }) => {

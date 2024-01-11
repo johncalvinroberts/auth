@@ -19,6 +19,12 @@ import { AuthenticationException } from './errors.js'
  */
 export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   /**
+   * Name of the guard using which the authentication was last
+   * attempted.
+   */
+  #authenticationAttemptedViaGuard?: keyof KnownGuards
+
+  /**
    * Name of the guard using which the request has
    * been authenticated
    */
@@ -59,27 +65,45 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
 
   /**
    * A boolean to know if the current request has
-   * been authenticated
+   * been authenticated. The property returns false
+   * when "authenticate" or "authenticateUsing" methods
+   * are not used
    */
   get isAuthenticated(): boolean {
-    return this.use(this.#authenticatedViaGuard || this.defaultGuard).isAuthenticated
+    if (!this.#authenticationAttemptedViaGuard) {
+      return false
+    }
+
+    return this.use(this.#authenticationAttemptedViaGuard).isAuthenticated
   }
 
   /**
-   * Reference to the currently authenticated user
+   * Reference to the currently authenticated user. The property
+   * returns undefined when "authenticate" or "authenticateUsing"
+   * methods are not used.
    */
   get user(): {
     [K in keyof KnownGuards]: ReturnType<KnownGuards[K]>['user']
   }[keyof KnownGuards] {
-    return this.use(this.#authenticatedViaGuard || this.defaultGuard).user
+    if (!this.#authenticationAttemptedViaGuard) {
+      return undefined
+    }
+
+    return this.use(this.#authenticationAttemptedViaGuard).user
   }
 
   /**
-   * Whether or not the authentication has been attempted
-   * during the current request
+   * Whether or not the authentication has been attempted during
+   * the current request. The property returns false
+   * when "authenticate" or "authenticateUsing" methods
+   * are not used
    */
   get authenticationAttempted(): boolean {
-    return this.use(this.#authenticatedViaGuard || this.defaultGuard).authenticationAttempted
+    if (!this.#authenticationAttemptedViaGuard) {
+      return false
+    }
+
+    return this.use(this.#authenticationAttemptedViaGuard).authenticationAttempted
   }
 
   constructor(ctx: HttpContext, config: { default: keyof KnownGuards; guards: KnownGuards }) {
@@ -95,7 +119,11 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   getUserOrFail(): {
     [K in keyof KnownGuards]: ReturnType<ReturnType<KnownGuards[K]>['getUserOrFail']>
   }[keyof KnownGuards] {
-    return this.use(this.#authenticatedViaGuard || this.defaultGuard).getUserOrFail() as {
+    if (!this.#authenticatedViaGuard) {
+      throw AuthenticationException.E_INVALID_AUTH_SESSION()
+    }
+
+    return this.use(this.#authenticatedViaGuard).getUserOrFail() as {
       [K in keyof KnownGuards]: ReturnType<ReturnType<KnownGuards[K]>['getUserOrFail']>
     }[keyof KnownGuards]
   }
@@ -129,6 +157,13 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   }
 
   /**
+   * Authenticate current request using the default guard
+   */
+  authenticate() {
+    return this.authenticateUsing()
+  }
+
+  /**
    * Authenticate the request using all of the mentioned
    * guards or the default guard.
    *
@@ -140,12 +175,13 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
    */
   async authenticateUsing(guards?: (keyof KnownGuards)[], options?: { loginRoute?: string }) {
     const guardsToUse = guards || [this.defaultGuard]
-    let lastUsedGuardDriver: string | undefined
+    let lastUsedDriver: string | undefined
 
     for (let guardName of guardsToUse) {
       debug('attempting to authenticate using guard "%s"', guardName)
       const guard = this.use(guardName)
-      lastUsedGuardDriver = guard.driverName
+      this.#authenticationAttemptedViaGuard = guardName
+      lastUsedDriver = guard.driverName
 
       if (await guard.check()) {
         this.#authenticatedViaGuard = guardName
@@ -155,7 +191,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
 
     throw new AuthenticationException('Unauthorized access', {
       code: 'E_UNAUTHORIZED_ACCESS',
-      guardDriverName: lastUsedGuardDriver!,
+      guardDriverName: lastUsedDriver!,
       redirectTo: options?.loginRoute,
     })
   }
