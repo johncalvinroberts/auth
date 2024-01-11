@@ -8,7 +8,6 @@
  */
 
 import { BaseLucidUserProvider } from '../../core/user_providers/lucid.js'
-import { BaseDatabaseUserProvider } from '../../core/user_providers/database.js'
 import type { LucidAuthenticatable, UserProviderContract } from '../../core/types.js'
 
 /**
@@ -18,11 +17,3 @@ import type { LucidAuthenticatable, UserProviderContract } from '../../core/type
 export class LucidUserProvider<UserModel extends LucidAuthenticatable>
   extends BaseLucidUserProvider<UserModel>
   implements UserProviderContract<InstanceType<UserModel>> {}
-
-/**
- * Using database query builder to find users for
- * session auth
- */
-export class DatabaseUserProvider<User extends Record<string, any>>
-  extends BaseDatabaseUserProvider<User>
-  implements UserProviderContract<User> {}

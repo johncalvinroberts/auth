@@ -124,44 +124,6 @@ export type LucidUserProviderOptions<Model extends LucidAuthenticatable> = {
 }
 
 /**
- * Options accepted by the Database user provider
- */
-export type DatabaseUserProviderOptions<RealUser extends Record<string, any>> = {
-  /**
-   * Define the hasher to use to hash and verify
-   * passwords
-   */
-  hasher?: keyof HashersList
-
-  /**
-   * Optionally define the connection to use when making database
-   * queries
-   */
-  connection?: string
-
-  /**
-   * Database table to query to find the user
-   */
-  table: string
-
-  /**
-   * Column name to read the hashed password
-   */
-  passwordColumnName: string
-
-  /**
-   * An array of uids to use when finding a user for login. Make
-   * sure all fields can be used to uniquely lookup a user.
-   */
-  uids: Extract<keyof RealUser, string>[]
-
-  /**
-   * The name of the id column to unique identify the user.
-   */
-  id: string
-}
-
-/**
  * Options accepted by the Database token provider
  */
 export type DatabaseTokenProviderOptions = {

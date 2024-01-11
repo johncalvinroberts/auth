@@ -13,12 +13,8 @@ import { configProvider } from '@adonisjs/core'
 import type { ConfigProvider } from '@adonisjs/core/types'
 
 import type { GuardConfigProvider, GuardFactory } from './types.js'
-import type { LucidUserProvider, DatabaseUserProvider } from './user_providers/main.js'
-import type {
-  LucidAuthenticatable,
-  LucidUserProviderOptions,
-  DatabaseUserProviderOptions,
-} from '../core/types.js'
+import type { LucidUserProvider } from './user_providers/main.js'
+import type { LucidAuthenticatable, LucidUserProviderOptions } from '../core/types.js'
 
 /**
  * Config resolved by the "defineConfig" method
@@ -70,25 +66,10 @@ export function defineConfig<
  * finding users for authentication
  */
 export const providers: {
-  db: <RealUser extends Record<string, any>>(
-    config: DatabaseUserProviderOptions<RealUser>
-  ) => ConfigProvider<DatabaseUserProvider<RealUser>>
   lucid: <RealUser extends LucidAuthenticatable>(
     config: LucidUserProviderOptions<RealUser>
   ) => ConfigProvider<LucidUserProvider<RealUser>>
 } = {
-  db(config) {
-    return configProvider.create(async (app) => {
-      const db = await app.container.make('lucid.db')
-      const hasher = await app.container.make('hash')
-      const { DatabaseUserProvider } = await import('./user_providers/main.js')
-      return new DatabaseUserProvider(
-        db,
-        config.hasher ? hasher.use(config.hasher) : hasher.use(),
-        config
-      )
-    })
-  },
   lucid(config) {
     return configProvider.create(async (app) => {
       const { LucidUserProvider } = await import('./user_providers/main.js')
