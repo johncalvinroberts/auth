@@ -24,7 +24,7 @@ import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
 import { SessionGuardEvents } from '../src/guards/session/types.js'
-import { FactoryUser } from '../factories/lucid_user_provider.js'
+import { FactoryUser } from '../factories/core/lucid_user_provider.js'
 import { BasicAuthGuardEvents } from '../src/guards/basic_auth/types.js'
 
 export const encryption: Encryption = new EncryptionFactory().create()
@@ -83,7 +83,14 @@ export async function createTables(db: Database) {
 
   test.cleanup(async () => {
     await db.connection().schema.dropTable('users')
+    await db.connection().schema.dropTable('test_tokens')
     await db.connection().schema.dropTable('remember_me_tokens')
+  })
+
+  await db.connection().schema.createTable('test_tokens', (table) => {
+    table.string('series', 60).notNullable()
+    table.integer('user_id').notNullable().unsigned()
+    table.string('hash', 80).notNullable()
   })
 
   await db.connection().schema.createTable('users', (table) => {
@@ -97,6 +104,7 @@ export async function createTables(db: Database) {
     table.string('series', 60).notNullable()
     table.integer('user_id').notNullable().unsigned()
     table.string('type').notNullable()
+    table.string('guard').notNullable()
     table.string('token', 80).notNullable()
     table.datetime('created_at').notNullable()
     table.datetime('updated_at').notNullable()
@@ -185,6 +193,9 @@ export function defineCookies(
     .join(';')
 }
 
+/**
+ * Travels time by seconds
+ */
 export function timeTravel(secondsToTravel: number) {
   const test = getActiveTest()
   if (!test) {
@@ -196,6 +207,25 @@ export function timeTravel(secondsToTravel: number) {
   const date = new Date()
   date.setSeconds(date.getSeconds() + secondsToTravel)
   timekeeper.travel(date)
+
+  test.cleanup(() => {
+    timekeeper.reset()
+  })
+}
+
+/**
+ * Freezes time in the moment
+ */
+export function freezeTime() {
+  const test = getActiveTest()
+  if (!test) {
+    throw new Error('Cannot use "freezeTime" outside of a Japa test')
+  }
+
+  timekeeper.reset()
+
+  const date = new Date()
+  timekeeper.freeze(date)
 
   test.cleanup(() => {
     timekeeper.reset()

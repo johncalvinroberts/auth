@@ -9,16 +9,19 @@
 
 import type { HttpContext } from '@adonisjs/core/http'
 
-import { SessionGuard } from '../src/guards/session/guard.js'
+import { SessionGuard } from '../../../src/guards/session/guard.js'
 import type {
   SessionGuardConfig,
+  SessionGuardEvents,
   SessionUserProviderContract,
-} from '../src/guards/session/types.js'
+} from '../../../src/guards/session/types.js'
 import {
   FactoryUser,
   TestLucidUserProvider,
   LucidUserProviderFactory,
-} from './lucid_user_provider.js'
+} from '../../core/lucid_user_provider.js'
+import { EmitterLike } from '@adonisjs/core/types/events'
+import { PROVIDER_REAL_USER } from '../../../src/auth/symbols.js'
 
 /**
  * Exposes the API to create a session guard for testing. Under
@@ -36,11 +39,16 @@ export class SessionGuardFactory {
     UserProvider extends SessionUserProviderContract<unknown> = TestLucidUserProvider<
       typeof FactoryUser
     >,
-  >(ctx: HttpContext, provider?: UserProvider) {
+  >(
+    ctx: HttpContext,
+    emitter: EmitterLike<SessionGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>,
+    provider?: UserProvider
+  ) {
     return new SessionGuard(
       'web',
       this.#config,
       ctx,
+      emitter,
       provider || new LucidUserProviderFactory().create()
     )
   }

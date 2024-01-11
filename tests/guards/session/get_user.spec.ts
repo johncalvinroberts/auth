@@ -13,7 +13,7 @@ import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
 import { createTables, createDatabase, createEmitter } from '../../helpers.js'
 import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
-import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
+import { SessionGuardFactory } from '../../../factories/guards/session/guard_factory.js'
 
 test.group('Session guard | getUser', () => {
   test('get user when authentication succeeded', async ({ assert, expectTypeOf }) => {

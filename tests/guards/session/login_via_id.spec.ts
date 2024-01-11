@@ -13,7 +13,7 @@ import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
 import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
-import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
+import { SessionGuardFactory } from '../../../factories/guards/session/guard_factory.js'
 import { createDatabase, createEmitter, createTables, pEvent } from '../../helpers.js'
 
 test.group('Session guard | loginViaId', () => {

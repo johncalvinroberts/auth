@@ -13,13 +13,13 @@ import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { createEmitter } from '../helpers.js'
 import { AuthManager } from '../../src/auth/auth_manager.js'
 import { Authenticator } from '../../src/auth/authenticator.js'
-import { SessionGuardFactory } from '../../factories/session_guard_factory.js'
+import { SessionGuardFactory } from '../../factories/guards/session/guard_factory.js'
 
 test.group('Auth manager', () => {
   test('create authenticator from auth manager', async ({ assert, expectTypeOf }) => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
 
     const authManager = new AuthManager({
       default: 'web',

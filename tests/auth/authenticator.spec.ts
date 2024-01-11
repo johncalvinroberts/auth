@@ -12,15 +12,15 @@ import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
 import { Authenticator } from '../../src/auth/authenticator.js'
-import { FactoryUser } from '../../factories/lucid_user_provider.js'
+import { FactoryUser } from '../../factories/core/lucid_user_provider.js'
 import { createDatabase, createEmitter, createTables } from '../helpers.js'
-import { SessionGuardFactory } from '../../factories/session_guard_factory.js'
+import { SessionGuardFactory } from '../../factories/guards/session/guard_factory.js'
 
 test.group('Authenticator', () => {
   test('create authenticator with guards', async ({ assert, expectTypeOf }) => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
@@ -36,7 +36,7 @@ test.group('Authenticator', () => {
   test('access guard using its name', async ({ assert, expectTypeOf }) => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
@@ -60,7 +60,7 @@ test.group('Authenticator', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const authenticator = new Authenticator(ctx, {
@@ -92,7 +92,7 @@ test.group('Authenticator', () => {
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const authenticator = new Authenticator(ctx, {

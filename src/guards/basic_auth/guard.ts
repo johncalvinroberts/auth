@@ -9,8 +9,8 @@
 
 import auth from 'basic-auth'
 import type { HttpContext } from '@adonisjs/core/http'
-import type { EmitterLike } from '@adonisjs/core/types/events'
 import { Exception, RuntimeException } from '@poppinss/utils'
+import type { EmitterLike } from '@adonisjs/core/types/events'
 
 import debug from '../../auth/debug.js'
 import type { BasicAuthGuardEvents } from './types.js'
@@ -46,7 +46,7 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
   /**
    * Emitter to emit events
    */
-  #emitter?: EmitterLike<BasicAuthGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
+  #emitter: EmitterLike<BasicAuthGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
 
   /**
    * Driver name of the guard
@@ -77,9 +77,15 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
    */
   user?: UserProvider[typeof PROVIDER_REAL_USER]
 
-  constructor(name: string, ctx: HttpContext, userProvider: UserProvider) {
+  constructor(
+    name: string,
+    ctx: HttpContext,
+    emitter: EmitterLike<BasicAuthGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>,
+    userProvider: UserProvider
+  ) {
     this.#ctx = ctx
     this.#name = name
+    this.#emitter = emitter
     this.#userProvider = userProvider
   }
 
@@ -87,24 +93,12 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
    * Notifies about authentication failure and throws the exception
    */
   #authenticationFailed(error: Exception): never {
-    if (this.#emitter) {
-      this.#emitter.emit('basic_auth:authentication_failed', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        error,
-      })
-    }
-
+    this.#emitter.emit('basic_auth:authentication_failed', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      error,
+    })
     throw error
-  }
-
-  /**
-   * Register an event emitter to listen for global events for
-   * authentication lifecycle.
-   */
-  setEmitter(emitter: EmitterLike<any>): this {
-    this.#emitter = emitter
-    return this
   }
 
   /**
@@ -155,12 +149,10 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
      * Beginning authentication attempt
      */
     this.authenticationAttempted = true
-    if (this.#emitter) {
-      this.#emitter.emit('basic_auth:authentication_attempted', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-      })
-    }
+    this.#emitter.emit('basic_auth:authentication_attempted', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+    })
 
     /**
      * Fetch credentials from the header
@@ -180,13 +172,11 @@ export class BasicAuthGuard<UserProvider extends UserProviderContract<unknown>>
 
     debug('basic_auth_guard: marking user as authenticated')
 
-    if (this.#emitter) {
-      this.#emitter.emit('basic_auth:authentication_succeeded', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        user: this.user,
-      })
-    }
+    this.#emitter.emit('basic_auth:authentication_succeeded', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      user: this.user,
+    })
 
     /**
      * Return user

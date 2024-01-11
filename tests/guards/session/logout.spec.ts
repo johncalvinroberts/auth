@@ -13,7 +13,7 @@ import { HttpContextFactory } from '@adonisjs/core/factories/http'
 
 import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
 import { RememberMeToken } from '../../../src/guards/session/remember_me_token.js'
-import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
+import { SessionGuardFactory } from '../../../factories/guards/session/guard_factory.js'
 import {
   pEvent,
   createTables,

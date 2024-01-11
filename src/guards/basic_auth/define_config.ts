@@ -42,8 +42,7 @@ export function basicAuthGuard<UserProvider extends UserProviderContract<unknown
        * between guards and perform authentication
        */
       return (ctx) => {
-        const guard = new BasicAuthGuard<UserProvider>(guardName, ctx, provider)
-        return guard.setEmitter(emitter)
+        return new BasicAuthGuard<UserProvider>(guardName, ctx, emitter as any, provider)
       }
     },
   }

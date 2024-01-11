@@ -13,7 +13,7 @@ import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
 import { RememberMeToken } from '../../../src/guards/session/remember_me_token.js'
 import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
-import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
+import { SessionGuardFactory } from '../../../factories/guards/session/guard_factory.js'
 import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/database.js'
 import { createDatabase, createEmitter, createTables, pEvent, parseCookies } from '../../helpers.js'
 
