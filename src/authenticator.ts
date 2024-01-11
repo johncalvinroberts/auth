@@ -8,33 +8,17 @@
  */
 
 import type { HttpContext } from '@adonisjs/core/http'
+import { RuntimeException } from '@adonisjs/core/exceptions'
 
 import debug from './debug.js'
 import type { GuardFactory } from './types.js'
-import { AuthenticationException } from './errors.js'
+import { E_UNAUTHORIZED_ACCESS } from './errors.js'
 
 /**
- * Authenticator is an HTTP request specific implementation for using
- * guards to login users and authenticate requests.
+ * Authenticator is used to authenticate incoming HTTP requests
+ * using one or more known guards.
  */
 export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
-  /**
-   * Name of the guard using which the authentication was last
-   * attempted.
-   */
-  #authenticationAttemptedViaGuard?: keyof KnownGuards
-
-  /**
-   * Name of the guard using which the request has
-   * been authenticated
-   */
-  #authenticatedViaGuard?: keyof KnownGuards
-
-  /**
-   * Reference to HTTP context
-   */
-  #ctx: HttpContext
-
   /**
    * Registered guards
    */
@@ -47,6 +31,31 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
    * Cache of guards created during the HTTP request
    */
   #guardsCache: Partial<Record<keyof KnownGuards, unknown>> = {}
+
+  /**
+   * Last guard that was used to perform the authentication via
+   * the "authenticateUsing" method.
+   *
+   * @note
+   * Reset on every call made to "authenticate", "check" and
+   * "authenticateUsing" method.
+   */
+  #authenticationAttemptedViaGuard?: keyof KnownGuards
+
+  /**
+   * Name of the guard using which the request has
+   * been authenticated successfully.
+   *
+   * @note
+   * Reset on every call made to "authenticate", "check" and
+   * "authenticateUsing" method.
+   */
+  #authenticatedViaGuard?: keyof KnownGuards
+
+  /**
+   * Reference to HTTP context
+   */
+  #ctx: HttpContext
 
   /**
    * Name of the default guard
@@ -64,10 +73,9 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   }
 
   /**
-   * A boolean to know if the current request has
-   * been authenticated. The property returns false
-   * when "authenticate" or "authenticateUsing" methods
-   * are not used
+   * A boolean to know if the current request has been authenticated. The
+   * property returns false when "authenticate" or "authenticateUsing"
+   * methods are not used.
    */
   get isAuthenticated(): boolean {
     if (!this.#authenticationAttemptedViaGuard) {
@@ -78,9 +86,9 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   }
 
   /**
-   * Reference to the currently authenticated user. The property
-   * returns undefined when "authenticate" or "authenticateUsing"
-   * methods are not used.
+   * Reference to the currently authenticated user. The property returns
+   * undefined when "authenticate" or "authenticateUsing" methods are
+   * not used.
    */
   get user(): {
     [K in keyof KnownGuards]: ReturnType<KnownGuards[K]>['user']
@@ -94,9 +102,9 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
 
   /**
    * Whether or not the authentication has been attempted during
-   * the current request. The property returns false
-   * when "authenticate" or "authenticateUsing" methods
-   * are not used
+   * the current request. The property returns false when the
+   * "authenticate" or "authenticateUsing" methods are not
+   * used.
    */
   get authenticationAttempted(): boolean {
     if (!this.#authenticationAttemptedViaGuard) {
@@ -120,7 +128,9 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
     [K in keyof KnownGuards]: ReturnType<ReturnType<KnownGuards[K]>['getUserOrFail']>
   }[keyof KnownGuards] {
     if (!this.#authenticatedViaGuard) {
-      throw AuthenticationException.E_INVALID_AUTH_SESSION()
+      throw new RuntimeException(
+        'Cannot access authenticated user. Please call "auth.authenticate" method first.'
+      )
     }
 
     return this.use(this.#authenticatedViaGuard).getUserOrFail() as {
@@ -140,7 +150,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
      */
     const cachedGuard = this.#guardsCache[guardToUse]
     if (cachedGuard) {
-      debug('using guard from cache. name: "%s"', guardToUse)
+      debug('authenticator: using guard from cache. name: "%s"', guardToUse)
       return cachedGuard as ReturnType<KnownGuards[Guard]>
     }
 
@@ -149,7 +159,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
     /**
      * Construct guard and cache it
      */
-    debug('creating guard. name: "%s"', guardToUse)
+    debug('authenticator: creating guard. name: "%s"', guardToUse)
     const guardInstance = guardFactory(this.#ctx)
     this.#guardsCache[guardToUse] = guardInstance
 
@@ -157,30 +167,50 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   }
 
   /**
-   * Authenticate current request using the default guard
+   * Authenticate current request using the default guard. Calling this
+   * method multiple times triggers multiple authentication with the
+   * guard.
    */
   authenticate() {
     return this.authenticateUsing()
   }
 
   /**
-   * Authenticate the request using all of the mentioned
-   * guards or the default guard.
-   *
-   * The authentication process will stop after any of the
-   * mentioned guards is able to authenticate the request
-   * successfully.
-   *
-   * Otherwise, "AuthenticationException" will be raised.
+   * Silently attempt to authenticate the request using the default
+   * guard. Calling this method multiple times triggers multiple
+   * authentication with the guard.
    */
-  async authenticateUsing(guards?: (keyof KnownGuards)[], options?: { loginRoute?: string }) {
+  async check() {
+    this.#authenticationAttemptedViaGuard = this.defaultGuard
+    const isAuthenticated = await this.use().check()
+    if (isAuthenticated) {
+      this.#authenticatedViaGuard = this.defaultGuard
+    }
+
+    return isAuthenticated
+  }
+
+  /**
+   * Authenticate the request using all of the mentioned guards
+   * or the default guard.
+   *
+   * The authentication process will stop after any of the mentioned
+   * guards is able to authenticate the request successfully.
+   *
+   * Otherwise, "E_UNAUTHORIZED_ACCESS" will be raised.
+   */
+  async authenticateUsing(
+    guards?: (keyof KnownGuards)[],
+    options?: { loginRoute?: string }
+  ): Promise<boolean> {
     const guardsToUse = guards || [this.defaultGuard]
     let lastUsedDriver: string | undefined
 
     for (let guardName of guardsToUse) {
       debug('attempting to authenticate using guard "%s"', guardName)
-      const guard = this.use(guardName)
+
       this.#authenticationAttemptedViaGuard = guardName
+      const guard = this.use(guardName)
       lastUsedDriver = guard.driverName
 
       if (await guard.check()) {
@@ -189,8 +219,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
       }
     }
 
-    throw new AuthenticationException('Unauthorized access', {
-      code: 'E_UNAUTHORIZED_ACCESS',
+    throw new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
       guardDriverName: lastUsedDriver!,
       redirectTo: options?.loginRoute,
     })

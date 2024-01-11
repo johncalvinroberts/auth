@@ -7,9 +7,10 @@
  * file that was distributed with this source code.
  */
 
+export * as errors from './src/errors.js'
 export { configure } from './configure.js'
-export * as symbols from './src/auth/symbols.js'
-export { AuthManager } from './src/auth/auth_manager.js'
-export { Authenticator } from './src/auth/authenticator.js'
-export { defineConfig, providers } from './src/auth/define_config.js'
-export { AuthenticationException, InvalidCredentialsException } from './src/auth/errors.js'
+export * as symbols from './src/symbols.js'
+export { AuthManager } from './src/auth_manager.js'
+export { defineConfig } from './src/define_config.js'
+export { Authenticator } from './src/authenticator.js'
+export { AuthenticatorClient } from './src/authenticator_client.js'

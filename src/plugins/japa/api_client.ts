@@ -24,8 +24,8 @@ declare module '@japa/api-client' {
     }
 
     /**
-     * Login a user using the default authentication
-     * guard when making an API call
+     * Login a user using the default authentication guard
+     * when making an API call
      */
     loginAs(user: {
       [K in keyof Authenticators]: Authenticators[K] extends GuardFactory
@@ -64,6 +64,10 @@ export const authApiClient = (app: ApplicationService) => {
   const pluginFn: PluginFn = function () {
     debug('installing auth api client plugin')
 
+    /**
+     * Login a user using the default authentication guard
+     * when making an API call
+     */
     ApiRequest.macro('loginAs', function (this: ApiRequest, user) {
       this.authData = {
         guard: '__default__',
@@ -72,6 +76,9 @@ export const authApiClient = (app: ApplicationService) => {
       return this
     })
 
+    /**
+     * Define the authentication guard for login
+     */
     ApiRequest.macro('withGuard', function <
       K extends keyof Authenticators,
       Self extends ApiRequest,

@@ -12,10 +12,10 @@ import type { GuardFactory } from './types.js'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 
 /**
- * Authenticator client is used to create guard instances for
- * testing. It passes a fake HTTPContext to the guards, so
- * make sure to not call server side APIs that might be
- * relying on a real HTTPContext instance
+ * Authenticator client is used to create guard instances for testing.
+ * It passes a fake HTTPContext to the guards, so make sure to not
+ * call server side APIs that might be relying on a real
+ * HTTPContext instance.
  */
 export class AuthenticatorClient<KnownGuards extends Record<string, GuardFactory>> {
   /**
@@ -55,7 +55,7 @@ export class AuthenticatorClient<KnownGuards extends Record<string, GuardFactory
      */
     const cachedGuard = this.#guardsCache[guardToUse]
     if (cachedGuard) {
-      debug('using guard from cache. name: "%s"', guardToUse)
+      debug('authenticator client: using guard from cache. name: "%s"', guardToUse)
       return cachedGuard as ReturnType<KnownGuards[Guard]>
     }
 
@@ -64,7 +64,7 @@ export class AuthenticatorClient<KnownGuards extends Record<string, GuardFactory
     /**
      * Construct guard and cache it
      */
-    debug('creating guard. name: "%s"', guardToUse)
+    debug('authenticator client: creating guard. name: "%s"', guardToUse)
     const guardInstance = guardFactory(new HttpContextFactory().create())
     this.#guardsCache[guardToUse] = guardInstance
 

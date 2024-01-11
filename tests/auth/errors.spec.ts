@@ -8,14 +8,16 @@
  */
 
 import { test } from '@japa/runner'
+import { I18nManagerFactory } from '@adonisjs/i18n/factories'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
-import { AuthenticationException, InvalidCredentialsException } from '../../src/auth/errors.js'
 
-test.group('Errors | AuthenticationException', () => {
-  test('handle session guard exception with a redirect', async ({ assert }) => {
+import { E_UNAUTHORIZED_ACCESS } from '../../src/errors.js'
+
+test.group('Errors | E_UNAUTHORIZED_ACCESS | session', () => {
+  test('report error via flash messages and redirect', async ({ assert }) => {
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = new AuthenticationException('Unauthorized access', {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
       guardDriverName: 'session',
     })
 
@@ -25,17 +27,15 @@ test.group('Errors | AuthenticationException', () => {
     })
 
     assert.deepEqual(ctx.session.responseFlashMessages.all(), {
-      errorsBag: { 'auth.authenticate': ['Unauthorized access'] },
+      errorsBag: { E_UNAUTHORIZED_ACCESS: 'Unauthorized access' },
       input: {},
     })
     assert.equal(ctx.response.getHeader('location'), '/')
   })
 
-  test('handle session guard exception with a redirect to a custom location', async ({
-    assert,
-  }) => {
+  test('redirect to a custom location', async ({ assert }) => {
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = new AuthenticationException('Unauthorized access', {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
       guardDriverName: 'session',
       redirectTo: '/login',
     })
@@ -46,30 +46,26 @@ test.group('Errors | AuthenticationException', () => {
     })
 
     assert.deepEqual(ctx.session.responseFlashMessages.all(), {
-      errorsBag: { 'auth.authenticate': ['Unauthorized access'] },
+      errorsBag: { E_UNAUTHORIZED_ACCESS: 'Unauthorized access' },
       input: {},
     })
     assert.equal(ctx.response.getHeader('location'), '/login')
   })
 
-  test('handle session guard exception with JSON response', async ({ assert }) => {
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = new AuthenticationException('Unauthorized access', {
+  test('respond with json', async ({ assert }) => {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
       guardDriverName: 'session',
-      redirectTo: '/login',
     })
 
     const ctx = new HttpContextFactory().create()
 
     /**
-     * The accept header will force a JSON response
+     * Force JSON response
      */
     ctx.request.request.headers.accept = 'application/json'
+    await error.handle(error, ctx)
 
-    await sessionMiddleware.handle(ctx, async () => {
-      return error.handle(error, ctx)
-    })
-
+    assert.isUndefined(ctx.response.getHeader('location'))
     assert.deepEqual(ctx.response.getBody(), {
       errors: [
         {
@@ -77,65 +73,85 @@ test.group('Errors | AuthenticationException', () => {
         },
       ],
     })
-    assert.isUndefined(ctx.response.getHeader('location'))
-    assert.deepEqual(ctx.session.responseFlashMessages.all(), {})
   })
 
-  test('handle session guard exception with JSONAPI response', async ({ assert }) => {
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = new AuthenticationException('Unauthorized access', {
+  test('respond with JSONAPI response', async ({ assert }) => {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
       guardDriverName: 'session',
-      redirectTo: '/login',
     })
 
     const ctx = new HttpContextFactory().create()
 
     /**
-     * The accept header will force a JSONAPI response
+     * Force JSONAPI response
      */
     ctx.request.request.headers.accept = 'application/vnd.api+json'
+    await error.handle(error, ctx)
 
-    await sessionMiddleware.handle(ctx, async () => {
-      return error.handle(error, ctx)
-    })
-
+    assert.isUndefined(ctx.response.getHeader('location'))
     assert.deepEqual(ctx.response.getBody(), {
       errors: [
         {
           title: 'Unauthorized access',
-          code: 'auth.authenticate',
+          code: 'E_UNAUTHORIZED_ACCESS',
         },
       ],
     })
+  })
+
+  test('translate error message using i18n', async ({ assert }) => {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
+      guardDriverName: 'session',
+    })
+    const i18nManager = new I18nManagerFactory()
+      .merge({
+        config: {
+          loaders: [
+            () => {
+              return {
+                async load() {
+                  return {
+                    en: {
+                      'errors.E_UNAUTHORIZED_ACCESS': 'Access denied',
+                    },
+                  }
+                },
+              }
+            },
+          ],
+        },
+      })
+      .create()
+
+    const ctx = new HttpContextFactory().create()
+    await i18nManager.loadTranslations()
+    ctx.i18n = i18nManager.locale('en')
+
+    /**
+     * Force JSON response
+     */
+    ctx.request.request.headers.accept = 'application/json'
+    await error.handle(error, ctx)
+
     assert.isUndefined(ctx.response.getHeader('location'))
-    assert.deepEqual(ctx.session.responseFlashMessages.all(), {})
-  })
-
-  test('send plain text response when there is no renderer for a guard', async ({ assert }) => {
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = new AuthenticationException('Unauthorized access', {
-      guardDriverName: 'foo',
-      redirectTo: '/login',
-      status: 401,
+    assert.deepEqual(ctx.response.getBody(), {
+      errors: [
+        {
+          message: 'Access denied',
+        },
+      ],
     })
-
-    const ctx = new HttpContextFactory().create()
-    await sessionMiddleware.handle(ctx, async () => {
-      return error.handle(error, ctx)
-    })
-
-    assert.equal(ctx.response.getStatus(), 401)
-    assert.equal(ctx.response.getBody(), 'Unauthorized access')
   })
+})
 
+test.group('Errors | E_UNAUTHORIZED_ACCESS | basic auth', () => {
   test('handle basic auth exception with a prompt', async ({ assert }) => {
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = AuthenticationException.E_INVALID_BASIC_AUTH_CREDENTIALS()
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
+      guardDriverName: 'basic_auth',
+    })
 
     const ctx = new HttpContextFactory().create()
-    await sessionMiddleware.handle(ctx, async () => {
-      return error.handle(error, ctx)
-    })
+    await error.handle(error, ctx)
 
     assert.equal(
       ctx.response.getHeader('WWW-Authenticate'),
@@ -144,87 +160,16 @@ test.group('Errors | AuthenticationException', () => {
   })
 })
 
-test.group('Errors | InvalidCredentialsException', () => {
-  test('handle session guard exception with a redirect', async ({ assert }) => {
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = InvalidCredentialsException.E_INVALID_CREDENTIALS('session')
+test.group('Errors | E_UNAUTHORIZED_ACCESS | unknown guard', () => {
+  test('send plain text response', async ({ assert }) => {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
+      guardDriverName: 'foo',
+    })
 
     const ctx = new HttpContextFactory().create()
-    await sessionMiddleware.handle(ctx, async () => {
-      return error.handle(error, ctx)
-    })
+    await error.handle(error, ctx)
 
-    assert.deepEqual(ctx.session.responseFlashMessages.all(), {
-      errorsBag: { 'auth.login': ['Invalid credentials'] },
-      input: {},
-    })
-    assert.equal(ctx.response.getHeader('location'), '/')
-  })
-
-  test('handle session guard exception with a JSON response', async ({ assert }) => {
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = InvalidCredentialsException.E_INVALID_CREDENTIALS('session')
-
-    const ctx = new HttpContextFactory().create()
-
-    /**
-     * The accept header will force a JSON response
-     */
-    ctx.request.request.headers.accept = 'application/json'
-
-    await sessionMiddleware.handle(ctx, async () => {
-      return error.handle(error, ctx)
-    })
-
-    assert.deepEqual(ctx.response.getBody(), {
-      errors: [
-        {
-          message: 'Invalid credentials',
-        },
-      ],
-    })
-    assert.isUndefined(ctx.response.getHeader('location'))
-    assert.deepEqual(ctx.session.responseFlashMessages.all(), {})
-  })
-
-  test('handle session guard exception with a JSONAPI response', async ({ assert }) => {
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = InvalidCredentialsException.E_INVALID_CREDENTIALS('session')
-
-    const ctx = new HttpContextFactory().create()
-
-    /**
-     * The accept header will force a JSON response
-     */
-    ctx.request.request.headers.accept = 'application/vnd.api+json'
-
-    await sessionMiddleware.handle(ctx, async () => {
-      return error.handle(error, ctx)
-    })
-
-    assert.deepEqual(ctx.response.getBody(), {
-      errors: [
-        {
-          title: 'Invalid credentials',
-          code: 'auth.login',
-        },
-      ],
-    })
-    assert.isUndefined(ctx.response.getHeader('location'))
-    assert.deepEqual(ctx.session.responseFlashMessages.all(), {})
-  })
-
-  test('respond with plain text when there is no renderer for guard', async ({ assert }) => {
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = InvalidCredentialsException.E_INVALID_CREDENTIALS('foo')
-
-    const ctx = new HttpContextFactory().create()
-    await sessionMiddleware.handle(ctx, async () => {
-      return error.handle(error, ctx)
-    })
-
-    assert.equal(ctx.response.getBody(), 'Invalid credentials')
-    assert.isUndefined(ctx.response.getHeader('location'))
-    assert.deepEqual(ctx.session.responseFlashMessages.all(), {})
+    assert.equal(ctx.response.getStatus(), 401)
+    assert.equal(ctx.response.getBody(), 'Unauthorized access')
   })
 })

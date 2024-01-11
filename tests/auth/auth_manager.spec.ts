@@ -10,22 +10,19 @@
 import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 
-import { createEmitter } from '../helpers.js'
-import { AuthManager } from '../../src/auth/auth_manager.js'
-import { Authenticator } from '../../src/auth/authenticator.js'
-import { SessionGuardFactory } from '../../factories/guards/session/guard_factory.js'
-import { AuthenticatorClient } from '../../src/auth/authenticator_client.js'
+import { AuthManager } from '../../src/auth_manager.js'
+import { FakeGuard } from '../../factories/auth/main.js'
+import { Authenticator } from '../../src/authenticator.js'
+import { AuthenticatorClient } from '../../src/authenticator_client.js'
 
 test.group('Auth manager', () => {
   test('create authenticator from auth manager', async ({ assert, expectTypeOf }) => {
-    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
 
     const authManager = new AuthManager({
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
@@ -35,14 +32,10 @@ test.group('Auth manager', () => {
   })
 
   test('create authenticator client from auth manager', async ({ assert, expectTypeOf }) => {
-    const emitter = createEmitter()
-    const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
-
     const authManager = new AuthManager({
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 

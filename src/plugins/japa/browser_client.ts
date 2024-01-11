@@ -21,9 +21,8 @@ import type { Authenticators, GuardContract, GuardFactory } from '../../types.js
 declare module 'playwright' {
   export interface BrowserContext {
     /**
-     * Login a user using the default authentication
-     * guard when using the browser context to
-     * make page visits
+     * Login a user using the default authentication guard when
+     * using the browser context to make page visits
      */
     loginAs(user: {
       [K in keyof Authenticators]: Authenticators[K] extends GuardFactory
@@ -53,6 +52,10 @@ declare module 'playwright' {
   }
 }
 
+/**
+ * Browser API client to authenticate users when making
+ * HTTP requests using the Japa Browser client.
+ */
 export const authBrowserClient = (app: ApplicationService) => {
   const pluginFn: PluginFn = async function () {
     debug('installing auth browser client plugin')
@@ -61,6 +64,10 @@ export const authBrowserClient = (app: ApplicationService) => {
 
     decoratorsCollection.register({
       context(context) {
+        /**
+         * Define the authentication guard for login and perform
+         * login
+         */
         context.withGuard = function (guardName) {
           return {
             async loginAs(user) {
@@ -89,6 +96,10 @@ export const authBrowserClient = (app: ApplicationService) => {
           }
         }
 
+        /**
+         * Login a user using the default authentication guard when
+         * using the browser context to make page visits
+         */
         context.loginAs = async function (user) {
           const client = auth.createAuthenticatorClient()
           const guard = client.use() as GuardContract<unknown>

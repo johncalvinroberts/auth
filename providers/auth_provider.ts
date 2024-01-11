@@ -11,8 +11,8 @@ import { configProvider } from '@adonisjs/core'
 import { RuntimeException } from '@poppinss/utils'
 import type { ApplicationService } from '@adonisjs/core/types'
 
-import type { AuthService } from '../src/auth/types.js'
-import { AuthManager } from '../src/auth/auth_manager.js'
+import type { AuthService } from '../src/types.js'
+import { AuthManager } from '../src/auth_manager.js'
 
 declare module '@adonisjs/core/types' {
   export interface ContainerBindings {

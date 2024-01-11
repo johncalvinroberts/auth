@@ -9,23 +9,19 @@
 
 import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
-import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { Authenticator } from '../../src/auth/authenticator.js'
-import { FactoryUser } from '../../factories/core/lucid_user_provider.js'
-import { createDatabase, createEmitter, createTables } from '../helpers.js'
-import { SessionGuardFactory } from '../../factories/guards/session/guard_factory.js'
+import { Authenticator } from '../../src/authenticator.js'
+import { E_UNAUTHORIZED_ACCESS } from '../../src/errors.js'
+import { FakeGuard, FakeUser } from '../../factories/auth/main.js'
 
 test.group('Authenticator', () => {
   test('create authenticator with guards', async ({ assert, expectTypeOf }) => {
-    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
@@ -34,78 +30,75 @@ test.group('Authenticator', () => {
   })
 
   test('access guard using its name', async ({ assert, expectTypeOf }) => {
-    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
     const webGuard = authenticator.use('web')
-    assert.strictEqual(webGuard, sessionGuard)
+    assert.instanceOf(webGuard, FakeGuard)
     assert.equal(authenticator.defaultGuard, 'web')
-    assert.equal(webGuard.driverName, 'session')
+    assert.equal(webGuard.driverName, 'fake')
     assert.strictEqual(authenticator.use('web'), authenticator.use('web'))
-    expectTypeOf(webGuard.user).toMatchTypeOf<FactoryUser | undefined>()
+    expectTypeOf(webGuard.user).toMatchTypeOf<FakeUser | undefined>()
   })
 
   test('authenticate using the default guard', async ({ assert, expectTypeOf }) => {
-    const db = await createDatabase()
-    await createTables(db)
-
-    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const authenticator = new Authenticator(ctx, {
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
-    await sessionMiddleware.handle(ctx, async () => {
-      ctx.session.put('auth_web', user.id)
-      await authenticator.authenticate()
+    await authenticator.authenticate()
+
+    assert.equal(authenticator.user!.id, 1)
+    expectTypeOf(authenticator.user).toMatchTypeOf<FakeUser | undefined>()
+    expectTypeOf(authenticator.getUserOrFail()).toMatchTypeOf<FakeUser>()
+    assert.equal(authenticator.authenticatedViaGuard, 'web')
+    assert.isTrue(authenticator.isAuthenticated)
+    assert.isTrue(authenticator.authenticationAttempted)
+  })
+
+  test('check authentication using the default guard', async ({ assert, expectTypeOf }) => {
+    const ctx = new HttpContextFactory().create()
+
+    const authenticator = new Authenticator(ctx, {
+      default: 'web',
+      guards: {
+        web: () => new FakeGuard(),
+      },
     })
 
-    assert.instanceOf(authenticator.user, FactoryUser)
-    assert.equal(authenticator.user!.id, user.id)
-    expectTypeOf(authenticator.user).toMatchTypeOf<FactoryUser | undefined>()
-    expectTypeOf(authenticator.getUserOrFail()).toMatchTypeOf<FactoryUser>()
+    await authenticator.check()
+
+    assert.equal(authenticator.user!.id, 1)
+    expectTypeOf(authenticator.user).toMatchTypeOf<FakeUser | undefined>()
+    expectTypeOf(authenticator.getUserOrFail()).toMatchTypeOf<FakeUser>()
     assert.equal(authenticator.authenticatedViaGuard, 'web')
     assert.isTrue(authenticator.isAuthenticated)
     assert.isTrue(authenticator.authenticationAttempted)
   })
 
   test('authenticate using the guard instance', async ({ assert }) => {
-    const db = await createDatabase()
-    await createTables(db)
-
-    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-
     const authenticator = new Authenticator(ctx, {
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
-    await sessionMiddleware.handle(ctx, async () => {
-      ctx.session.put('auth_web', user.id)
-      await authenticator.use().authenticate()
-    })
+    const user = await authenticator.use().authenticate()
 
+    assert.equal(user.id, 1)
     assert.isUndefined(authenticator.user)
     assert.isUndefined(authenticator.authenticatedViaGuard)
     assert.isFalse(authenticator.isAuthenticated)
@@ -113,60 +106,68 @@ test.group('Authenticator', () => {
   })
 
   test('access properties without authenticating user', async ({ assert }) => {
-    const db = await createDatabase()
-    await createTables(db)
-
-    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-
     const authenticator = new Authenticator(ctx, {
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
-    })
-
-    await sessionMiddleware.handle(ctx, async () => {
-      ctx.session.put('auth_web', user.id)
     })
 
     assert.isUndefined(authenticator.user)
     assert.isUndefined(authenticator.authenticatedViaGuard)
     assert.isFalse(authenticator.isAuthenticated)
     assert.isFalse(authenticator.authenticationAttempted)
-    assert.throws(() => authenticator.getUserOrFail(), 'Invalid or expired authentication session')
+    assert.throws(
+      () => authenticator.getUserOrFail(),
+      'Cannot access authenticated user. Please call "auth.authenticate" method first.'
+    )
   })
 
   test('throw error when unable to authenticate', async ({ assert }) => {
-    assert.plan(4)
+    assert.plan(5)
 
-    const db = await createDatabase()
-    await createTables(db)
-
-    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
-    const sessionMiddleware = await new SessionMiddlewareFactory().create()
-
     const authenticator = new Authenticator(ctx, {
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
-    try {
-      await sessionMiddleware.handle(ctx, async () => {
-        await authenticator.authenticateUsing()
-      })
-    } catch (error) {
-      assert.equal(error.message, 'Unauthorized access')
-      assert.equal(error.guardDriverName, 'session')
+    authenticator.use('web').authenticate = async function () {
+      this.authenticationAttempted = true
+      return this.getUserOrFail()
     }
 
+    try {
+      await authenticator.authenticateUsing()
+    } catch (error) {
+      assert.instanceOf(error, E_UNAUTHORIZED_ACCESS)
+      assert.equal(error.message, 'Unauthorized access')
+      assert.equal(error.guardDriverName, 'fake')
+    }
+
+    assert.isFalse(authenticator.isAuthenticated)
+    assert.isTrue(authenticator.authenticationAttempted)
+  })
+
+  test('do not throw error when unable to authenticate via check method', async ({ assert }) => {
+    const ctx = new HttpContextFactory().create()
+    const authenticator = new Authenticator(ctx, {
+      default: 'web',
+      guards: {
+        web: () => new FakeGuard(),
+      },
+    })
+
+    authenticator.use('web').authenticate = async function () {
+      this.authenticationAttempted = true
+      return this.getUserOrFail()
+    }
+
+    const isAuthenticated = await authenticator.check()
+    assert.isFalse(isAuthenticated)
     assert.isFalse(authenticator.isAuthenticated)
     assert.isTrue(authenticator.authenticationAttempted)
   })

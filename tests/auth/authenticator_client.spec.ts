@@ -8,23 +8,15 @@
  */
 
 import { test } from '@japa/runner'
-import { HttpContextFactory } from '@adonisjs/core/factories/http'
-
-import { FactoryUser } from '../../factories/core/lucid_user_provider.js'
-import { createDatabase, createEmitter, createTables } from '../helpers.js'
-import { SessionGuardFactory } from '../../factories/guards/session/guard_factory.js'
-import { AuthenticatorClient } from '../../src/auth/authenticator_client.js'
+import { FakeGuard, FakeUser } from '../../factories/auth/main.js'
+import { AuthenticatorClient } from '../../src/authenticator_client.js'
 
 test.group('Authenticator client', () => {
   test('create authenticator client with guards', async ({ assert, expectTypeOf }) => {
-    const emitter = createEmitter()
-    const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
-
     const client = new AuthenticatorClient({
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
@@ -33,46 +25,30 @@ test.group('Authenticator client', () => {
   })
 
   test('access guard using its name', async ({ assert, expectTypeOf }) => {
-    const emitter = createEmitter()
-    const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
-
     const client = new AuthenticatorClient({
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
     const webGuard = client.use('web')
-    assert.strictEqual(webGuard, sessionGuard)
+    assert.instanceOf(webGuard, FakeGuard)
     assert.equal(client.defaultGuard, 'web')
-    assert.equal(webGuard.driverName, 'session')
+    assert.equal(webGuard.driverName, 'fake')
     assert.strictEqual(client.use('web'), client.use('web'))
     assert.strictEqual(client.use(), client.use('web'))
-    expectTypeOf(webGuard.user).toMatchTypeOf<FactoryUser | undefined>()
+    expectTypeOf(webGuard.user).toMatchTypeOf<FakeUser | undefined>()
   })
 
   test('call authenticateAsClient via client', async ({ assert }) => {
-    const db = await createDatabase()
-    await createTables(db)
-
-    const emitter = createEmitter()
-    const ctx = new HttpContextFactory().create()
-    const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
-
     const client = new AuthenticatorClient({
       default: 'web',
       guards: {
-        web: () => sessionGuard,
+        web: () => new FakeGuard(),
       },
     })
 
-    assert.deepEqual(await client.use('web').authenticateAsClient(user), {
-      session: {
-        auth_web: user.id,
-      },
-    })
+    await assert.rejects(() => client.use('web').authenticateAsClient({ id: 1 }), 'Not supported')
   })
 })

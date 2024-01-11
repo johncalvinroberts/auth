@@ -14,7 +14,8 @@ import type { AuthManager } from './auth_manager.js'
 import type { GUARD_KNOWN_EVENTS } from './symbols.js'
 
 /**
- * The client response for authentication.
+ * Authentication response to login a user as a client.
+ * This response is used by Japa plugins
  */
 export interface AuthClientResponse {
   headers?: Record<string, any>
@@ -23,9 +24,15 @@ export interface AuthClientResponse {
 }
 
 /**
- * A set of properties a guard must implement.
+ * A set of properties a guard must implement to authenticate
+ * incoming HTTP requests
  */
 export interface GuardContract<User> {
+  /**
+   * A unique name for the guard driver
+   */
+  readonly driverName: string
+
   /**
    * Reference to the currently authenticated user
    */
@@ -49,29 +56,23 @@ export interface GuardContract<User> {
   authenticationAttempted: boolean
 
   /**
-   * Check if the current request has been
-   * authenticated without throwing an
-   * exception
-   */
-  check(): Promise<boolean>
-
-  /**
-   * The method is used to authenticate the user as
-   * client. This method should return cookies,
-   * headers, or session state.
-   */
-  authenticateAsClient(user: User): Promise<AuthClientResponse>
-
-  /**
-   * Authenticates the current request and throws
-   * an exception if the request is not authenticated.
+   * Authenticates the current request and throws an
+   * exception if the request is not authenticated.
    */
   authenticate(): Promise<User>
 
   /**
-   * A unique name for the guard driver
+   * Check if the current request has been authenticated
+   * without throwing an exception.
    */
-  driverName: string
+  check(): Promise<boolean>
+
+  /**
+   * The method is used to authenticate the user as client.
+   * This method should return cookies, headers, or
+   * session state.
+   */
+  authenticateAsClient(user: User): Promise<AuthClientResponse>
 
   /**
    * Aymbol for infer the events emitted by a specific
@@ -81,11 +82,19 @@ export interface GuardContract<User> {
 }
 
 /**
- * The authenticator guard factory method is called by the
- * Authenticator class to create an instance of a specific
- * guard during an HTTP request
+ * The guard factory method is called by the create an instance
+ * of a guard during an HTTP request
  */
 export type GuardFactory = (ctx: HttpContext) => GuardContract<unknown>
+
+/**
+ * Config provider for registering guards. The "name" property
+ * is reference to the object key to which the guard is
+ * assigned.
+ */
+export type GuardConfigProvider<Factory extends GuardFactory> = {
+  resolver: (name: string, app: ApplicationService) => Promise<Factory>
+}
 
 /**
  * Authenticators are inferred inside the user application
@@ -131,10 +140,3 @@ export interface AuthService
   extends AuthManager<
     Authenticators extends Record<string, GuardFactory> ? Authenticators : never
   > {}
-
-/**
- * Config provider for exporting guard
- */
-export type GuardConfigProvider<Guard extends GuardFactory> = {
-  resolver: (name: string, app: ApplicationService) => Promise<Guard>
-}

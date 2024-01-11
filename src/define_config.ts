@@ -11,10 +11,7 @@
 
 import { configProvider } from '@adonisjs/core'
 import type { ConfigProvider } from '@adonisjs/core/types'
-
 import type { GuardConfigProvider, GuardFactory } from './types.js'
-import type { LucidUserProvider } from './user_providers/main.js'
-import type { LucidAuthenticatable, LucidUserProviderOptions } from '../core/types.js'
 
 /**
  * Config resolved by the "defineConfig" method
@@ -59,22 +56,4 @@ export function defineConfig<
       guards: guards,
     } as ResolvedAuthConfig<KnownGuards>
   })
-}
-
-/**
- * Providers helper to configure user providers for
- * finding users for authentication
- */
-export const providers: {
-  lucid: <RealUser extends LucidAuthenticatable>(
-    config: LucidUserProviderOptions<RealUser>
-  ) => ConfigProvider<LucidUserProvider<RealUser>>
-} = {
-  lucid(config) {
-    return configProvider.create(async (app) => {
-      const { LucidUserProvider } = await import('./user_providers/main.js')
-      const hasher = await app.container.make('hash')
-      return new LucidUserProvider(config.hasher ? hasher.use(config.hasher) : hasher.use(), config)
-    })
-  },
 }

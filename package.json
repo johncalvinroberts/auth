@@ -20,19 +20,12 @@
   },
   "exports": {
     ".": "./build/index.js",
-    "./types": "./build/src/auth/types.js",
+    "./types": "./build/src/types.js",
     "./auth_provider": "./build/providers/auth_provider.js",
-    "./plugins/api_client": "./build/src/auth/plugins/japa/api_client.js",
-    "./plugins/browser_client": "./build/src/auth/plugins/japa/browser_client.js",
+    "./plugins/api_client": "./build/src/plugins/japa/api_client.js",
+    "./plugins/browser_client": "./build/src/plugins/japa/browser_client.js",
     "./services/main": "./build/services/auth.js",
-    "./core/guard_user": "./build/src/core/guard_user.js",
-    "./core/user_providers/*": "./build/src/core/user_providers/*.js",
-    "./core/token_providers/*": "./build/src/core/token_providers/*.js",
-    "./types/core": "./build/src/core/types.js",
-    "./session": "./build/src/guards/session/main.js",
-    "./basic_auth": "./build/src/guards/basic_auth/main.js",
-    "./initialize_auth_middleware": "./build/src/auth/middleware/initialize_auth_middleware.js",
-    "./types/session": "./build/src/guards/session/types.js"
+    "./initialize_auth_middleware": "./build/src/middleware/initialize_auth_middleware.js"
   },
   "scripts": {
     "pretest": "npm run lint",
@@ -134,6 +127,7 @@
     ],
     "exclude": [
       "tests/**",
+      "backup/**",
       "factories/**"
     ]
   },
