@@ -85,7 +85,7 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
 
     const importedModel = await this.options.model()
     this.model = importedModel.default
-    debug('lucid_user_provider: using model %O', this.model)
+    debug('lucid_user_provider: using model [class %s]', this.model.name)
     return this.model
   }
 
