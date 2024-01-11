@@ -8,5 +8,5 @@
  */
 
 export { SessionGuard } from './guard.js'
-export { RememberMeToken } from './token.js'
+export { RememberMeToken } from './remember_me_token.js'
 export { sessionGuard, tokensProvider } from './define_config.js'

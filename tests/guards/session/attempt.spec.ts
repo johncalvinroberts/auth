@@ -12,7 +12,7 @@ import { Scrypt } from '@adonisjs/core/hash/drivers/scrypt'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { FactoryUser } from '../../../factories/lucid_user_provider.js'
+import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
 import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
 import { createDatabase, createEmitter, createTables, pEvent } from '../../helpers.js'
 
@@ -26,7 +26,8 @@ test.group('Session guard | attempt', () => {
     const user = await FactoryUser.createWithDefaults({
       password: await new Scrypt({}).make('secret'),
     })
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [credentialsVerified] = await Promise.all([
@@ -39,8 +40,13 @@ test.group('Session guard | attempt', () => {
     assert.strictEqual(credentialsVerified?.user, sessionGuard.user)
     assert.equal(credentialsVerified?.uid, sessionGuard.user!.email)
     assert.equal(sessionGuard.user!.id, user.id)
-    // since the attempt method will fetch from db
+
+    /**
+     * since the attempt method will fetch user from db, the local
+     * and refetched instances will be different
+     */
     assert.notStrictEqual(sessionGuard.user, user)
+
     assert.isFalse(sessionGuard.isLoggedOut)
     assert.isFalse(sessionGuard.isAuthenticated)
     assert.isFalse(sessionGuard.authenticationAttempted)
@@ -56,7 +62,7 @@ test.group('Session guard | attempt', () => {
     const user = await FactoryUser.createWithDefaults({
       password: await new Scrypt({}).make('secret'),
     })
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [loginFailed, attemptResult] = await Promise.allSettled([
@@ -79,7 +85,7 @@ test.group('Session guard | attempt', () => {
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [loginFailed, attemptResult] = await Promise.allSettled([

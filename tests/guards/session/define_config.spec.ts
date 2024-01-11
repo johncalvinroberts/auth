@@ -14,9 +14,9 @@ import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { HashManagerFactory } from '@adonisjs/core/factories/hash'
 
 import { providers } from '../../../index.js'
-import { FactoryUser } from '../../../factories/main.js'
 import { createDatabase, createEmitter } from '../../helpers.js'
 import { SessionGuard } from '../../../src/guards/session/guard.js'
+import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
 import { LucidUserProvider } from '../../../src/auth/user_providers/main.js'
 import { sessionGuard, tokensProvider } from '../../../src/guards/session/define_config.js'
 

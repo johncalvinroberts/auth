@@ -7,34 +7,32 @@
  * file that was distributed with this source code.
  */
 
-import { Socket } from 'node:net'
 import { test } from '@japa/runner'
-import { IncomingMessage } from 'node:http'
-import { CookieClient } from '@adonisjs/core/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
-import { HttpContextFactory, RequestFactory } from '@adonisjs/core/factories/http'
+import { HttpContextFactory } from '@adonisjs/core/factories/http'
 
-import { RememberMeToken } from '../../../src/guards/session/token.js'
-import { FactoryUser } from '../../../factories/lucid_user_provider.js'
+import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
+import { RememberMeToken } from '../../../src/guards/session/remember_me_token.js'
 import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
 import {
   pEvent,
-  encryption,
   createTables,
   parseCookies,
   createEmitter,
   createDatabase,
+  defineCookies,
 } from '../../helpers.js'
-import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/main.js'
+import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/database.js'
 
 test.group('Session guard | logout', () => {
   test('logout user by deleting auth data from session store', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await sessionMiddleware.handle(ctx, async () => {
@@ -58,28 +56,28 @@ test.group('Session guard | logout', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
     const user = await FactoryUser.createWithDefaults()
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
-    const token = RememberMeToken.create(user.id, '1 year')
+    const token = RememberMeToken.create(user.id, '1 year', 'web')
     await tokensProvider.createToken(token)
 
-    const client = new CookieClient(encryption)
-    const req = new IncomingMessage(new Socket())
-    req.headers['cookie'] = `remember_web=${client.encrypt('remember_web', token.value)};`
+    const ctx = new HttpContextFactory().create()
 
-    const ctx = new HttpContextFactory()
-      .merge({
-        request: new RequestFactory()
-          .merge({
-            req,
-          })
-          .create(),
-      })
-      .create()
+    ctx.request.request.headers.cookie = defineCookies([
+      {
+        key: 'remember_web',
+        value: token.value!.release(),
+        type: 'encrypted',
+      },
+    ])
 
-    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
+
     await sessionMiddleware.handle(ctx, async () => {
       await sessionGuard.logout()
     })
@@ -99,10 +97,10 @@ test.group('Session guard | logout', () => {
     const db = await createDatabase()
     await createTables(db)
 
-    const ctx = new HttpContextFactory().create()
     const emitter = createEmitter()
+    const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await sessionMiddleware.handle(ctx, async () => {
@@ -133,24 +131,22 @@ test.group('Session guard | logout', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
-    const client = new CookieClient(encryption)
-    const req = new IncomingMessage(new Socket())
-    req.headers['cookie'] = `remember_web=${client.encrypt('remember_web', 'foo')};`
+    const ctx = new HttpContextFactory().create()
+    ctx.request.request.headers.cookie = defineCookies([
+      {
+        key: 'remember_web',
+        value: 'foo',
+        type: 'encrypted',
+      },
+    ])
 
-    const ctx = new HttpContextFactory()
-      .merge({
-        request: new RequestFactory()
-          .merge({
-            req,
-          })
-          .create(),
-      })
-      .create()
-
-    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
     await sessionMiddleware.handle(ctx, async () => {
       await sessionGuard.logout()
     })

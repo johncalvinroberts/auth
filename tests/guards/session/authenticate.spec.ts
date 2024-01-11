@@ -11,10 +11,10 @@ import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { RememberMeToken } from '../../../src/guards/session/token.js'
-import { FactoryUser } from '../../../factories/lucid_user_provider.js'
+import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
 import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
-import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/main.js'
+import { RememberMeToken } from '../../../src/guards/session/remember_me_token.js'
+import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/database.js'
 import {
   pEvent,
   timeTravel,
@@ -25,7 +25,7 @@ import {
   createEmitter,
 } from '../../helpers.js'
 
-test.group('Session guard | authenticate', () => {
+test.group('Session guard | authenticate | session id', () => {
   test('authenticate existing session for auth', async ({ assert, expectTypeOf }) => {
     const db = await createDatabase()
     await createTables(db)
@@ -33,7 +33,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [authSucceeded] = await Promise.all([
@@ -63,7 +63,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [authFailed, authenticateCall] = await Promise.allSettled([
@@ -86,8 +86,9 @@ test.group('Session guard | authenticate', () => {
     await createTables(db)
 
     const ctx = new HttpContextFactory().create()
+    const emitter = createEmitter()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await user.delete()
@@ -97,8 +98,12 @@ test.group('Session guard | authenticate', () => {
       await sessionGuard.authenticate()
     })
   }).throws('Invalid or expired authentication session')
+})
 
-  test('login user via remember me token when session does not have user', async ({ assert }) => {
+test.group('Session guard | authenticate | remember me token', () => {
+  test('create session when authentication is sucessful via remember me tokens', async ({
+    assert,
+  }) => {
     const db = await createDatabase()
     await createTables(db)
 
@@ -107,18 +112,18 @@ test.group('Session guard | authenticate', () => {
     const user = await FactoryUser.createWithDefaults()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const sessionGuard = new SessionGuardFactory()
-      .create(ctx)
-      .withRememberMeTokens(tokensProvider)
-      .setEmitter(emitter)
 
-    const token = RememberMeToken.create(user.id, '1 year')
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
+
+    const token = RememberMeToken.create(user.id, '1 year', 'web')
     await tokensProvider.createToken(token)
 
     ctx.request.request.headers.cookie = defineCookies([
       {
         key: 'remember_web',
-        value: token.value!,
+        value: token.value!.release(),
         type: 'encrypted',
       },
     ])
@@ -148,20 +153,23 @@ test.group('Session guard | authenticate', () => {
     assert.equal(freshToken!.hash, token.hash)
 
     const parsedCookies = parseCookies(ctx.response.getHeader('set-cookie') as string[])
-    assert.equal(parsedCookies.remember_web.value, token.value)
+    assert.equal(parsedCookies.remember_web.value, token.value!.release())
   })
 
-  test('refresh remember me token when using it after 1 min of last update', async ({ assert }) => {
+  test('recycle remember me token when using it after 1 min of last update', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
-    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
-    const token = RememberMeToken.create(user.id, '1 year')
+    const token = RememberMeToken.create(user.id, '1 year', 'web')
     await tokensProvider.createToken(token)
 
     /**
@@ -172,7 +180,7 @@ test.group('Session guard | authenticate', () => {
     ctx.request.request.headers.cookie = defineCookies([
       {
         key: 'remember_web',
-        value: token.value!,
+        value: token.value!.release(),
         type: 'encrypted',
       },
     ])
@@ -188,11 +196,14 @@ test.group('Session guard | authenticate', () => {
     assert.isTrue(sessionGuard.viaRemember)
     assert.deepEqual(ctx.session.all(), { auth_web: user.id })
 
+    const cookies = parseCookies(ctx.response.getHeader('set-cookie') as string[])
+    const decodedToken = RememberMeToken.decode(cookies.remember_web.value)!
+
     /**
      * Since the token was generated within 1 minute of using
      * it. We do not refresh it inside the db
      */
-    const freshToken = await tokensProvider.getTokenBySeries(token.series)
+    const freshToken = await tokensProvider.getTokenBySeries(decodedToken.series)
     assert.notEqual(freshToken!.hash, token.hash)
     assert.equal(freshToken!.series, token.series)
 
@@ -204,9 +215,12 @@ test.group('Session guard | authenticate', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
-    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     ctx.request.request.headers.cookie = defineCookies([
@@ -226,13 +240,16 @@ test.group('Session guard | authenticate', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
-    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
-    const token = RememberMeToken.create(user.id, '1 minute')
+    const token = RememberMeToken.create(user.id, '1 minute', 'web')
     await tokensProvider.createToken(token)
 
     /**
@@ -243,7 +260,7 @@ test.group('Session guard | authenticate', () => {
     ctx.request.request.headers.cookie = defineCookies([
       {
         key: 'remember_web',
-        value: token.value!,
+        value: token.value!.release(),
         type: 'encrypted',
       },
     ])
@@ -257,18 +274,21 @@ test.group('Session guard | authenticate', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
-    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
-    const token = RememberMeToken.create(user.id, '1 year')
+    const token = RememberMeToken.create(user.id, '1 year', 'web')
 
     ctx.request.request.headers.cookie = defineCookies([
       {
         key: 'remember_web',
-        value: token.value!,
+        value: token.value!.release(),
         type: 'encrypted',
       },
     ])
@@ -278,17 +298,20 @@ test.group('Session guard | authenticate', () => {
     })
   }).throws('Invalid or expired authentication session')
 
-  test('throw error when user for remember me token has been deleted', async () => {
+  test('throw error when user has been deleted', async () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
-    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
-    const token = RememberMeToken.create(user.id, '1 year')
+    const token = RememberMeToken.create(user.id, '1 year', 'web')
     await tokensProvider.createToken(token)
 
     await user.delete()
@@ -296,7 +319,42 @@ test.group('Session guard | authenticate', () => {
     ctx.request.request.headers.cookie = defineCookies([
       {
         key: 'remember_web',
-        value: token.value!,
+        value: token.value!.release(),
+        type: 'encrypted',
+      },
+    ])
+
+    await sessionMiddleware.handle(ctx, async () => {
+      await sessionGuard.authenticate()
+    })
+  }).throws('Invalid or expired authentication session')
+
+  test('throw error when remember me token type does not match', async () => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const emitter = createEmitter()
+    const ctx = new HttpContextFactory().create()
+    const user = await FactoryUser.createWithDefaults()
+    const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+
+    const token = RememberMeToken.create(user.id, '1 year', 'web')
+    await tokensProvider.createToken(token)
+
+    /**
+     * A matching token generated for different purpose should
+     * fail.
+     */
+    await db.from('remember_me_tokens').where('series', token.series).update({ type: 'foo_token' })
+
+    ctx.request.request.headers.cookie = defineCookies([
+      {
+        key: 'remember_web',
+        value: token.value!.release(),
         type: 'encrypted',
       },
     ])
@@ -310,9 +368,10 @@ test.group('Session guard | authenticate', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await sessionMiddleware.handle(ctx, async () => {
@@ -323,26 +382,56 @@ test.group('Session guard | authenticate', () => {
       assert.equal(authUser.id, user.id)
     })
   })
+})
 
-  test('silently authenticate using the check method', async ({ assert }) => {
+test.group('Session guard | check', () => {
+  test('return logged-in user when check method called', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const emitter = createEmitter()
+    const ctx = new HttpContextFactory().create()
+    const user = await FactoryUser.createWithDefaults()
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+
+    const [authFailed, authenticateCall] = await Promise.allSettled([
+      pEvent(emitter, 'session_auth:authentication_failed'),
+      sessionMiddleware.handle(ctx, async () => {
+        ctx.session.put('auth_web', user.id)
+        return sessionGuard.check()
+      }),
+    ])
+
+    assert.equal(authFailed.status, 'fulfilled')
+    assert.equal(authenticateCall.status, 'fulfilled')
+    if (authenticateCall.status === 'fulfilled') {
+      assert.isTrue(authenticateCall.value)
+    }
+  })
+
+  test('do not throw error when auth.check is used with non-logged in user', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [authFailed, authenticateCall] = await Promise.allSettled([
       pEvent(emitter, 'session_auth:authentication_failed'),
       sessionMiddleware.handle(ctx, async () => {
-        await sessionGuard.check()
+        return sessionGuard.check()
       }),
     ])
 
     assert.equal(authFailed.status, 'fulfilled')
     assert.equal(authenticateCall.status, 'fulfilled')
+    if (authenticateCall.status === 'fulfilled') {
+      assert.isFalse(authenticateCall.value)
+    }
   })
 
   test('throw error when calling authenticate after check', async ({ assert }) => {
@@ -352,7 +441,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [authFailed, authenticateCall] = await Promise.allSettled([
@@ -370,7 +459,9 @@ test.group('Session guard | authenticate', () => {
       'Invalid or expired authentication session'
     )
   })
+})
 
+test.group('Session guard | authenticateAsClient', () => {
   test('get authentication session via authenticateAsClient', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
@@ -378,7 +469,7 @@ test.group('Session guard | authenticate', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
 
     assert.deepEqual(await sessionGuard.authenticateAsClient(user), {
       session: {

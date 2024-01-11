@@ -52,12 +52,18 @@ export function sessionGuard<UserProvider extends SessionUserProviderContract<un
        * between guards and perform authentication
        */
       return (ctx) => {
-        const guard = new SessionGuard<UserProvider>(guardName, config, ctx, provider)
+        const guard = new SessionGuard<UserProvider>(
+          guardName,
+          config,
+          ctx,
+          emitter as any,
+          provider
+        )
         if (tokensProvider) {
           guard.withRememberMeTokens(tokensProvider)
         }
 
-        return guard.setEmitter(emitter)
+        return guard
       }
     },
   }
@@ -72,7 +78,7 @@ export const tokensProvider: {
   db(config) {
     return configProvider.create(async (app) => {
       const db = await app.container.make('lucid.db')
-      const { DatabaseRememberTokenProvider } = await import('./token_providers/main.js')
+      const { DatabaseRememberTokenProvider } = await import('./token_providers/database.js')
       return new DatabaseRememberTokenProvider(db, config)
     })
   },

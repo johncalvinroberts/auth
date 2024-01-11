@@ -12,7 +12,7 @@ import { Scrypt } from '@adonisjs/core/hash/drivers/scrypt'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { FactoryUser } from '../../../factories/lucid_user_provider.js'
+import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
 import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
 import { createDatabase, createEmitter, createTables, pEvent } from '../../helpers.js'
 
@@ -26,7 +26,7 @@ test.group('Session guard | loginViaId', () => {
     const user = await FactoryUser.createWithDefaults({
       password: await new Scrypt({}).make('secret'),
     })
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await Promise.all([
@@ -50,7 +50,7 @@ test.group('Session guard | loginViaId', () => {
 
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [loginFailed, attemptResult] = await Promise.allSettled([

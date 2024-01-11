@@ -11,8 +11,8 @@ import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { createTables, createDatabase } from '../../helpers.js'
-import { FactoryUser } from '../../../factories/lucid_user_provider.js'
+import { createTables, createDatabase, createEmitter } from '../../helpers.js'
+import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
 import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
 
 test.group('Session guard | getUser', () => {
@@ -20,9 +20,10 @@ test.group('Session guard | getUser', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await sessionMiddleware.handle(ctx, async () => {
@@ -38,8 +39,9 @@ test.group('Session guard | getUser', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
-    const sessionGuard = new SessionGuardFactory().create(ctx)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await assert.rejects(async () => {

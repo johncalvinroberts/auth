@@ -10,7 +10,7 @@
 import type { Exception } from '@poppinss/utils'
 import type { HttpContext } from '@adonisjs/core/http'
 
-import type { RememberMeToken } from './token.js'
+import type { RememberMeToken } from './remember_me_token.js'
 import type {
   UserProviderContract,
   TokenProviderContract,

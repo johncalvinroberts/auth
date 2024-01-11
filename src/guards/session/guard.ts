@@ -14,7 +14,7 @@ import { Exception, RuntimeException } from '@poppinss/utils'
 import type { EmitterLike } from '@adonisjs/core/types/events'
 
 import debug from '../../auth/debug.js'
-import { RememberMeToken } from './token.js'
+import { RememberMeToken } from './remember_me_token.js'
 import type { GuardContract } from '../../auth/types.js'
 import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../../auth/symbols.js'
 import { AuthenticationException, InvalidCredentialsException } from '../../auth/errors.js'
@@ -64,7 +64,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   /**
    * Emitter to emit events
    */
-  #emitter?: EmitterLike<SessionGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
+  #emitter: EmitterLike<SessionGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
 
   /**
    * Driver name of the guard
@@ -129,11 +129,13 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     name: string,
     config: SessionGuardConfig,
     ctx: HttpContext,
+    emitter: EmitterLike<SessionGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>,
     userProvider: UserProvider
   ) {
     this.#name = name
     this.#ctx = ctx
     this.#config = config
+    this.#emitter = emitter
     this.#userProvider = userProvider
   }
 
@@ -169,14 +171,12 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * Notifies about authentication failure and throws the exception
    */
   #authenticationFailed(error: Exception, sessionId: string): never {
-    if (this.#emitter) {
-      this.#emitter.emit('session_auth:authentication_failed', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        error,
-        sessionId: sessionId,
-      })
-    }
+    this.#emitter.emit('session_auth:authentication_failed', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      error,
+      sessionId: sessionId,
+    })
 
     throw error
   }
@@ -185,13 +185,11 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * Notifies about login failure and throws the exception
    */
   #loginFailed(error: Exception): never {
-    if (this.#emitter) {
-      this.#emitter.emit('session_auth:login_failed', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        error,
-      })
-    }
+    this.#emitter.emit('session_auth:login_failed', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      error,
+    })
 
     throw error
   }
@@ -206,15 +204,6 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    */
   withRememberMeTokens(tokensProvider: RememberMeProviderContract): this {
     this.#rememberMeTokenProvider = tokensProvider
-    return this
-  }
-
-  /**
-   * Register an event emitter to listen for global events for
-   * authentication lifecycle.
-   */
-  setEmitter(emitter: EmitterLike<any>): this {
-    this.#emitter = emitter
     return this
   }
 
@@ -254,14 +243,12 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     /**
      * Notify credentials have been verified
      */
-    if (this.#emitter) {
-      this.#emitter.emit('session_auth:credentials_verified', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        uid,
-        user,
-      })
-    }
+    this.#emitter.emit('session_auth:credentials_verified', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      uid,
+      user,
+    })
 
     return user
   }
@@ -305,22 +292,19 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     user: UserProvider[typeof PROVIDER_REAL_USER],
     remember: boolean = false
   ): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
-    if (this.#emitter) {
-      this.#emitter.emit('session_auth:login_attempted', {
-        ctx: this.#ctx,
-        user,
-        guardName: this.#name,
-      })
-    }
+    this.#emitter.emit('session_auth:login_attempted', {
+      ctx: this.#ctx,
+      user,
+      guardName: this.#name,
+    })
 
     const providerUser = await this.#userProvider.createUserForGuard(user)
     const session = this.#getSession()
+    const userId = providerUser.getId()
 
     /**
      * Create session and recycle the session id
      */
-    const userId = providerUser.getId()
-
     debug('session_guard: marking user with id "%s" as logged-in', userId)
     session.put(this.sessionKeyName, userId)
     session.regenerate()
@@ -331,14 +315,12 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     let token: RememberMeToken | undefined
     if (remember) {
       const tokenProvider = this.#getTokenProvider()
+      const rememberMeTokenAge = this.#config.rememberMeTokenAge || '2years'
 
       /**
        * Create a token
        */
-      token = RememberMeToken.create(
-        providerUser.getId(),
-        this.#config.rememberMeTokenAge || '2years'
-      )
+      token = RememberMeToken.create(providerUser.getId(), rememberMeTokenAge, this.#name)
 
       /**
        * Persist remember me token inside the database
@@ -349,8 +331,8 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
        * Drop token value inside the cookie
        */
       debug('session_guard: creating remember me cookie')
-      this.#ctx.response.encryptedCookie(this.rememberMeKeyName, token.value, {
-        maxAge: this.#config.rememberMeTokenAge,
+      this.#ctx.response.encryptedCookie(this.rememberMeKeyName, token.value!.release(), {
+        maxAge: rememberMeTokenAge,
         httpOnly: true,
       })
     } else {
@@ -366,15 +348,13 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     /**
      * Notify the login is successful
      */
-    if (this.#emitter) {
-      this.#emitter.emit('session_auth:login_succeeded', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        user,
-        sessionId: session.sessionId,
-        rememberMeToken: token,
-      })
-    }
+    this.#emitter.emit('session_auth:login_succeeded', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      user,
+      sessionId: session.sessionId,
+      rememberMeToken: token,
+    })
 
     return user
   }
@@ -394,13 +374,11 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     /**
      * Notify we are starting authentication process
      */
-    if (this.#emitter) {
-      this.#emitter.emit('session_auth:authentication_attempted', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        sessionId: session.sessionId,
-      })
-    }
+    this.#emitter.emit('session_auth:authentication_attempted', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      sessionId: session.sessionId,
+    })
 
     /**
      * Check if there is a user id inside the session store.
@@ -432,16 +410,14 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
       /**
        * Authentication was successful
        */
-      if (this.#emitter) {
-        this.#emitter.emit('session_auth:authentication_succeeded', {
-          ctx: this.#ctx,
-          guardName: this.#name,
-          sessionId: session.sessionId,
-          user: this.user!,
-        })
-      }
+      this.#emitter.emit('session_auth:authentication_succeeded', {
+        ctx: this.#ctx,
+        guardName: this.#name,
+        sessionId: session.sessionId,
+        user: this.user,
+      })
 
-      return this.user!
+      return this.user
     }
 
     /**
@@ -480,8 +456,12 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
       )
     }
 
+    /**
+     * Fail if token is missing, hash mis-matches, or the token guard does not
+     * match the current guards name
+     */
     const token = await this.#rememberMeTokenProvider.getTokenBySeries(decodedToken.series)
-    if (!token || !token.verify(decodedToken.value)) {
+    if (!token || !token.verify(decodedToken.value) || token.guard !== this.#name) {
       this.#authenticationFailed(
         AuthenticationException.E_INVALID_AUTH_SESSION(),
         session.sessionId
@@ -519,15 +499,13 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     /**
      * Authentication was successful via remember me token
      */
-    if (this.#emitter) {
-      this.#emitter.emit('session_auth:authentication_succeeded', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        sessionId: session.sessionId,
-        user: this.user!,
-        rememberMeToken: token,
-      })
-    }
+    this.#emitter.emit('session_auth:authentication_succeeded', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      sessionId: session.sessionId,
+      user: this.user!,
+      rememberMeToken: token,
+    })
 
     /**
      * ----------------------------------------------------------------
@@ -538,7 +516,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      * Here we refresh the token value inside the db when the
      * current remember_me token is older than 1 minute.
      *
-     * Otherwise, we re-use the same token. This is avoid race-conditions
+     * Otherwise, we re-use the same token. This is to avoid race-conditions
      * when parallel requests uses the remember_me token to authenticate
      * the user.
      *
@@ -546,27 +524,24 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      * Be it updated the token inside databse, or not.
      */
     const currentTime = new Date()
+    const rememberMeTokenAge = this.#config.rememberMeTokenAge || '2years'
     const updatedAtWithBuffer = new Date(token.updatedAt)
     updatedAtWithBuffer.setSeconds(updatedAtWithBuffer.getSeconds() + 60)
 
     if (updatedAtWithBuffer < currentTime) {
-      const newToken = RememberMeToken.create(
-        token.userId,
-        this.#config.rememberMeTokenAge || '2years'
-      )
-      await this.#rememberMeTokenProvider.updateTokenBySeries(
-        token.series,
-        newToken.hash,
-        newToken.expiresAt
-      )
+      /**
+       * Refresh and update the token
+       */
+      token.refresh(rememberMeTokenAge)
+      await this.#rememberMeTokenProvider.updateTokenBySeries(token.series, token)
 
-      this.#ctx.response.encryptedCookie(this.rememberMeKeyName, newToken.value, {
-        maxAge: this.#config.rememberMeTokenAge,
+      this.#ctx.response.encryptedCookie(this.rememberMeKeyName, token.value!.release(), {
+        maxAge: rememberMeTokenAge,
         httpOnly: true,
       })
     } else {
       this.#ctx.response.encryptedCookie(this.rememberMeKeyName, rememberMeCookie, {
-        maxAge: this.#config.rememberMeTokenAge,
+        maxAge: rememberMeTokenAge,
         httpOnly: true,
       })
     }
@@ -609,14 +584,12 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     /**
      * Notify the user has been logged out
      */
-    if (this.#emitter) {
-      this.#emitter.emit('session_auth:logged_out', {
-        ctx: this.#ctx,
-        guardName: this.#name,
-        user: this.user || null,
-        sessionId: session.sessionId,
-      })
-    }
+    this.#emitter.emit('session_auth:logged_out', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      user: this.user || null,
+      sessionId: session.sessionId,
+    })
 
     const rememberMeCookie = this.#ctx.request.encryptedCookie(this.rememberMeKeyName)
     if (!rememberMeCookie || !this.#rememberMeTokenProvider) {

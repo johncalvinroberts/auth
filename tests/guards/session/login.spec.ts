@@ -11,10 +11,10 @@ import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { RememberMeToken } from '../../../src/guards/session/token.js'
-import { FactoryUser } from '../../../factories/lucid_user_provider.js'
+import { RememberMeToken } from '../../../src/guards/session/remember_me_token.js'
+import { FactoryUser } from '../../../factories/core/lucid_user_provider.js'
 import { SessionGuardFactory } from '../../../factories/session_guard_factory.js'
-import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/main.js'
+import { DatabaseRememberTokenProvider } from '../../../src/guards/session/token_providers/database.js'
 import { createDatabase, createEmitter, createTables, pEvent, parseCookies } from '../../helpers.js'
 
 test.group('Session guard | login', () => {
@@ -22,9 +22,10 @@ test.group('Session guard | login', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await sessionMiddleware.handle(ctx, async () => {
@@ -45,7 +46,7 @@ test.group('Session guard | login', () => {
     const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).setEmitter(emitter)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     const [loginAttempted, loginSucceeded] = await Promise.all([
@@ -66,10 +67,13 @@ test.group('Session guard | login', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const tokensProvider = new DatabaseRememberTokenProvider(db, { table: 'remember_me_tokens' })
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx).withRememberMeTokens(tokensProvider)
+    const sessionGuard = new SessionGuardFactory()
+      .create(ctx, emitter)
+      .withRememberMeTokens(tokensProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await sessionMiddleware.handle(ctx, async () => {
@@ -109,9 +113,10 @@ test.group('Session guard | login', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
 
     await sessionMiddleware.handle(ctx, async () => {
@@ -125,9 +130,10 @@ test.group('Session guard | login', () => {
     const db = await createDatabase()
     await createTables(db)
 
+    const emitter = createEmitter()
     const ctx = new HttpContextFactory().create()
     const user = await FactoryUser.createWithDefaults()
-    const sessionGuard = new SessionGuardFactory().create(ctx)
+    const sessionGuard = new SessionGuardFactory().create(ctx, emitter)
 
     await sessionGuard.login(user)
   }).throws(
