@@ -12,7 +12,7 @@ import type { QueryClientContract } from '@adonisjs/lucid/types/database'
 
 import type { GuardUser } from './guard_user.js'
 import type { PROVIDER_REAL_USER } from '../auth/symbols.js'
-import type { LucidModel, LucidRow } from '@adonisjs/lucid/types/model'
+import type { LucidModel } from '@adonisjs/lucid/types/model'
 
 /**
  * The UserProvider is used to lookup a user for authentication
@@ -77,8 +77,11 @@ export interface TokenProviderContract<Token> {
  * A lucid model that can be used during authentication
  */
 export type LucidAuthenticatable = LucidModel & {
-  // new (): LucidRow & {}
-  new (): LucidRow
+  /**
+   * Optional static method to customize the user lookup
+   * during "findByUid" method call.
+   */
+  getUserForAuth?(uids: string[], value: string | number): Promise<any | null>
 }
 
 /**

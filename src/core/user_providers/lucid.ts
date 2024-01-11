@@ -139,7 +139,27 @@ export abstract class BaseLucidUserProvider<UserModel extends LucidAuthenticatab
    * ids, via the configured model.
    */
   async findByUid(value: string | number): Promise<LucidUser<InstanceType<UserModel>> | null> {
-    const query = this.getQueryBuilder(await this.getModel())
+    const model = await this.getModel()
+
+    /**
+     * Use custom lookup method when defined on the
+     * model.
+     */
+    if ('getUserForAuth' in model && typeof model.getUserForAuth === 'function') {
+      debug('lucid_user_provider: using getUserForAuth method on "[class %s]"', model.name)
+
+      const user = await model.getUserForAuth(this.options.uids, value)
+      if (!user) {
+        return null
+      }
+
+      return new LucidUser(user)
+    }
+
+    /**
+     * Self query
+     */
+    const query = this.getQueryBuilder(model)
     this.options.uids.forEach((uid) => query.orWhere(uid, value))
 
     debug(
