@@ -9,19 +9,15 @@ configure({
   suites: [
     {
       name: 'session',
-      files: ['tests/guards/session/**/*.spec.ts'],
+      files: ['tests/session_guard/**/*.spec.ts'],
     },
     {
       name: 'basic_auth',
-      files: ['tests/guards/basic_auth/**/*.spec.ts'],
+      files: ['tests/basic_auth_guard/**/*.spec.ts'],
     },
     {
       name: 'auth',
       files: ['tests/auth/**/*.spec.ts'],
-    },
-    {
-      name: 'core',
-      files: ['tests/core/**/*.spec.ts'],
     },
   ],
   plugins: [assert(), fileSystem(), expectTypeOf(), snapshot()],

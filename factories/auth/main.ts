@@ -11,9 +11,21 @@ import { GUARD_KNOWN_EVENTS } from '../../src/symbols.js'
 import { E_UNAUTHORIZED_ACCESS } from '../../src/errors.js'
 import { AuthClientResponse, GuardContract } from '../../src/types.js'
 
+/**
+ * @note
+ * Should not be exported to the outside world
+ */
 export type FakeUser = {
   id: number
 }
+
+/**
+ * Fake guard is an implementation of the auth guard contract
+ * that uses in-memory values used for testing.
+ *
+ * @note
+ * Should not be exported to the outside world
+ */
 export class FakeGuard implements GuardContract<FakeUser> {
   isAuthenticated: boolean = false
   authenticationAttempted: boolean = false
