@@ -311,7 +311,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      * expired tokens and optionally delete them.
      */
     const token = await this.#userProvider.findRememberMeTokenBySeries(decodedToken.series)
-    if (!token || !token.verify(decodedToken.value) || token.guard !== this.#name) {
+    if (!token || !token.verify(decodedToken.value)) {
       throw this.#authenticationFailed(sessionId)
     }
 
@@ -454,11 +454,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
       }
 
       debug('creating remember me cookie')
-      token = RememberMeToken.create(
-        userId,
-        this.#config.rememberMeTokenAge || '2years',
-        this.#name
-      )
+      token = RememberMeToken.create(userId, this.#config.rememberMeTokenAge || '2years')
       await this.#userProvider.createRememberMeToken(token)
       this.#createRememberMeCookie(token.value!.release())
     } else {

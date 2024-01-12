@@ -102,8 +102,6 @@ export async function createTables(db: Database) {
   await db.connection().schema.createTable('remember_me_tokens', (table) => {
     table.string('series', 60).notNullable()
     table.integer('user_id').notNullable().unsigned()
-    table.string('type').notNullable()
-    table.string('guard').notNullable()
     table.string('hash', 80).notNullable()
     table.datetime('created_at').notNullable()
     table.datetime('updated_at').notNullable()

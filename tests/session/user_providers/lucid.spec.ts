@@ -8,13 +8,14 @@
  */
 
 import { test } from '@japa/runner'
+import { compose } from '@poppinss/utils'
 import convertHrtime from 'convert-hrtime'
 import { BaseModel, column } from '@adonisjs/lucid/orm'
+
 import { createDatabase, createTables, getHasher, timeTravel } from '../../helpers.js'
-import { SessionLucidUserProvider } from '../../../modules/session_guard/providers/lucid.js'
-import { compose } from '@poppinss/utils'
-import { withRememberMeTokens } from '../../../modules/session_guard/models/remember_me_token.js'
 import { RememberMeToken } from '../../../modules/session_guard/remember_me_token.js'
+import { SessionLucidUserProvider } from '../../../modules/session_guard/providers/lucid.js'
+import { withRememberMeTokens } from '../../../modules/session_guard/models/remember_me_token.js'
 
 class User extends BaseModel {
   @column()
@@ -395,7 +396,7 @@ test.group('Session lucid user provider | rememberTokens | create', () => {
       passwordColumnName: 'password',
     })
 
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     await userProvider.createRememberMeToken(token)
   }).throws(
     'Cannot perist remember me token using "User" model. Make sure to use "withRememberMeTokens" mixin'
@@ -418,7 +419,7 @@ test.group('Session lucid user provider | rememberTokens | create', () => {
     })
 
     await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     await userProvider.createRememberMeToken(token)
 
     const tokens = await AuthUser.rememberMeTokens.all()
@@ -427,9 +428,7 @@ test.group('Session lucid user provider | rememberTokens | create', () => {
       createdAt: token.createdAt.getTime(),
       updatedAt: token.updatedAt.getTime(),
       expiresAt: token.expiresAt.getTime(),
-      type: token.type,
       series: token.series,
-      guard: token.guard,
       hash: token.hash,
     })
   })
@@ -453,7 +452,7 @@ test.group('Session lucid user provider | rememberTokens | find', () => {
     })
 
     await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     await userProvider.createRememberMeToken(token)
     const rememberMeToken = await userProvider.findRememberMeTokenBySeries(token.series)
 
@@ -463,8 +462,6 @@ test.group('Session lucid user provider | rememberTokens | find', () => {
     assert.equal(rememberMeToken!.createdAt.getTime(), token.createdAt.getTime())
     assert.equal(rememberMeToken!.hash, token.hash)
     assert.equal(rememberMeToken!.series, token.series)
-    assert.equal(rememberMeToken!.type, token.type)
-    assert.equal(rememberMeToken!.guard, token.guard)
   })
 
   test('return null when token is missing', async ({ assert }) => {
@@ -484,7 +481,7 @@ test.group('Session lucid user provider | rememberTokens | find', () => {
     })
 
     await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
 
     const rememberMeToken = await userProvider.findRememberMeTokenBySeries(token.series)
     assert.isNull(rememberMeToken)
@@ -507,35 +504,10 @@ test.group('Session lucid user provider | rememberTokens | find', () => {
     })
 
     await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     await userProvider.createRememberMeToken(token)
 
     timeTravel(21 * 60)
-
-    const rememberMeToken = await userProvider.findRememberMeTokenBySeries(token.series)
-    assert.isNull(rememberMeToken)
-  })
-
-  test('return null when token type mismatches', async ({ assert }) => {
-    const db = await createDatabase()
-    await createTables(db)
-
-    class AuthUser extends compose(User, withRememberMeTokens()) {}
-
-    const userProvider = new SessionLucidUserProvider(getHasher(), {
-      model: async () => {
-        return {
-          default: AuthUser,
-        }
-      },
-      uids: ['username', 'email'],
-      passwordColumnName: 'password',
-    })
-
-    await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
-    await userProvider.createRememberMeToken(token)
-    await AuthUser.rememberMeTokens.query().where('series', token.series).update({ type: 'foo' })
 
     const rememberMeToken = await userProvider.findRememberMeTokenBySeries(token.series)
     assert.isNull(rememberMeToken)
@@ -560,7 +532,7 @@ test.group('Session lucid user provider | rememberTokens | recycle', () => {
     })
 
     await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     const existingHash = token.hash
     const existingExpiresAt = token.expiresAt.getTime()
     const existingUpdateAt = token.updatedAt.getTime()
@@ -596,7 +568,7 @@ test.group('Session lucid user provider | rememberTokens | recycle', () => {
     })
 
     await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     token.refresh('30 mins')
     await userProvider.recycleRememberMeToken(token)
 
@@ -623,7 +595,7 @@ test.group('Session lucid user provider | rememberTokens | delete', () => {
     })
 
     await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     await userProvider.createRememberMeToken(token)
     await userProvider.deleteRememberMeTokenBySeries(token.series)
 
@@ -648,7 +620,7 @@ test.group('Session lucid user provider | rememberTokens | delete', () => {
     })
 
     await AuthUser.create({ email: 'virk@adonisjs.com', password: 'secret', username: 'virk' })
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     await userProvider.createRememberMeToken(token)
     await userProvider.deleteRememberMeTokenBySeries('foo')
 

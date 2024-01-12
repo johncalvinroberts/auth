@@ -114,7 +114,7 @@ export class SessionFakeUserProvider implements SessionUserProviderContract<Sess
     if (this.#token.series !== series) {
       return null
     }
-    if (this.#token.isExpired() || this.#token.type !== 'remember_me_token') {
+    if (this.#token.isExpired()) {
       return null
     }
 

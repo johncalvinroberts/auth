@@ -53,7 +53,7 @@ test.group('Session guard | logout', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     userProvider.useToken(token)
 
     ctx.request.request.headers.cookie = defineCookies([
@@ -93,7 +93,7 @@ test.group('Session guard | logout', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     userProvider.useToken(token)
 
     ctx.request.request.headers.cookie = defineCookies([

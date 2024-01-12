@@ -12,6 +12,10 @@ configure({
       files: ['tests/session/**/*.spec.ts'],
     },
     {
+      name: 'api_tokens',
+      files: ['tests/api_tokens/**/*.spec.ts'],
+    },
+    {
       name: 'auth',
       files: ['tests/auth/**/*.spec.ts'],
     },

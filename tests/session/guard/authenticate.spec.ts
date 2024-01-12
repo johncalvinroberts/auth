@@ -104,7 +104,7 @@ test.group('Session guard | authenticate | via remember me cookie', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
 
     const originalExpiryTime = token.expiresAt.getTime()
     const originalUpdatedAtTime = token.updatedAt.getTime()
@@ -146,7 +146,7 @@ test.group('Session guard | authenticate | via remember me cookie', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     const originalExpiryTime = token.expiresAt.getTime()
     const originalUpdatedAtTime = token.updatedAt.getTime()
     const originalHash = token.hash
@@ -191,7 +191,7 @@ test.group('Session guard | authenticate | via remember me cookie', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
 
     userProvider.useToken(token)
     timeTravel(21 * 60)
@@ -231,7 +231,7 @@ test.group('Session guard | authenticate | via remember me cookie', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
 
     ctx.request.request.headers.cookie = defineCookies([
       {
@@ -268,7 +268,7 @@ test.group('Session guard | authenticate | via remember me cookie', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
     userProvider.useToken(token)
 
     try {
@@ -298,7 +298,7 @@ test.group('Session guard | authenticate | via remember me cookie', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(1, '20 mins', 'web')
+    const token = RememberMeToken.create(1, '20 mins')
 
     userProvider.useToken(token)
 
@@ -337,7 +337,7 @@ test.group('Session guard | authenticate | via remember me cookie', () => {
 
     const guard = new SessionGuard('web', {}, ctx, emitter, userProvider)
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const token = RememberMeToken.create(10, '20 mins', 'web')
+    const token = RememberMeToken.create(10, '20 mins')
     userProvider.useToken(token)
 
     ctx.request.request.headers.cookie = defineCookies([

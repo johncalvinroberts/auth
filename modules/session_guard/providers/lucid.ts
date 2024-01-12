@@ -247,10 +247,8 @@ export class SessionLucidUserProvider<UserModel extends LucidAuthenticatable>
       createdAt: token.createdAt,
       updatedAt: token.createdAt,
       expiresAt: token.expiresAt,
-      guard: token.guard,
       hash: token.hash,
       series: token.series,
-      type: token.type,
     })
   }
 
@@ -269,13 +267,12 @@ export class SessionLucidUserProvider<UserModel extends LucidAuthenticatable>
       createdAt: typeof token.createdAt === 'number' ? new Date(token.createdAt) : token.createdAt,
       updatedAt: typeof token.updatedAt === 'number' ? new Date(token.updatedAt) : token.updatedAt,
       expiresAt: typeof token.expiresAt === 'number' ? new Date(token.expiresAt) : token.expiresAt,
-      guard: token.guard,
       hash: token.hash,
       series: token.series,
       userId: token.userId,
     })
 
-    if (rememberMeToken.isExpired() || token.type !== rememberMeToken.type) {
+    if (rememberMeToken.isExpired()) {
       return null
     }
 

@@ -48,15 +48,7 @@ export class RememberMeToken {
   /**
    * Creates remember me token instance from persisted information.
    */
-  static createFromPersisted(attributes: {
-    series: string
-    userId: string | number | BigInt
-    hash: string
-    guard: string
-    createdAt: Date
-    updatedAt: Date
-    expiresAt: Date
-  }) {
+  static createFromPersisted(attributes: ConstructorParameters<typeof RememberMeToken>[0]) {
     return new RememberMeToken(attributes)
   }
 
@@ -65,14 +57,9 @@ export class RememberMeToken {
    * method computes the token series, value, hash and
    * timestamps
    */
-  static create(
-    userId: string | number | BigInt,
-    expiry: string | number,
-    guard: string,
-    size: number = 30
-  ) {
+  static create(userId: string | number | BigInt, expiry: string | number, size: number = 40) {
     const series = string.random(15)
-    const seed = string.random(size)
+    const seed = this.seed(size)
     const createdAt = new Date()
     const updatedAt = new Date()
     const expiresAt = new Date()
@@ -81,8 +68,7 @@ export class RememberMeToken {
     const token = new RememberMeToken({
       series,
       userId,
-      hash: createHash('sha256').update(seed).digest('hex'),
-      guard,
+      hash: RememberMeToken.hash(seed),
       createdAt,
       updatedAt,
       expiresAt,
@@ -93,10 +79,20 @@ export class RememberMeToken {
   }
 
   /**
-   * Static name for the token to uniquely identify a
-   * bucket of tokens
+   * Generates hash for a value. Overwrite this method to customize
+   * hashing algo.
    */
-  readonly type: 'remember_me_token' = 'remember_me_token'
+  static hash(value: string) {
+    return createHash('sha256').update(value).digest('hex')
+  }
+
+  /**
+   * Creates a random string for an opaque token. You can override this
+   * method to customize token value generation
+   */
+  static seed(size: number) {
+    return string.random(size)
+  }
 
   /**
    * Series is a unique sequence to identify the
@@ -118,16 +114,10 @@ export class RememberMeToken {
   value?: Secret<string>
 
   /**
-   * Hash is computed from the seed to later verify the validify
+   * Hash is computed from the seed to later verify the validity
    * of seed
    */
   hash: string
-
-  /**
-   * Guard for which the token is generated. This is to avoid
-   * cross guards using each others remember me tokens
-   */
-  guard: string
 
   /**
    * Date/time when the token instance was created
@@ -148,7 +138,6 @@ export class RememberMeToken {
     series: string
     userId: string | number | BigInt
     hash: string
-    guard: string
     createdAt: Date
     updatedAt: Date
     expiresAt: Date
@@ -156,7 +145,6 @@ export class RememberMeToken {
     this.series = attributes.series
     this.userId = attributes.userId
     this.hash = attributes.hash
-    this.guard = attributes.guard
     this.createdAt = attributes.createdAt
     this.updatedAt = attributes.updatedAt
     this.expiresAt = attributes.expiresAt
@@ -166,13 +154,13 @@ export class RememberMeToken {
    * Refreshes the token's value, hash, updatedAt and
    * expiresAt timestamps
    */
-  refresh(expiry: string | number, size: number = 30) {
-    const seed = string.random(size)
+  refresh(expiry: string | number, size: number = 40) {
+    const seed = RememberMeToken.seed(size)
 
     /**
      * Re-computing public value and hash
      */
-    this.hash = createHash('sha256').update(seed).digest('hex')
+    this.hash = RememberMeToken.hash(seed)
     this.value = new Secret(`${base64.urlEncode(this.series)}.${base64.urlEncode(seed)}`)
 
     /**

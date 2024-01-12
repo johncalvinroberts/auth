@@ -15,7 +15,6 @@ export class RememberMeTokenModel extends BaseModel {
    * The series property is the primary key
    */
   static selfAssignPrimaryKey = true
-  static table = 'remember_me_tokens'
 
   @column({ isPrimary: true })
   declare series: string
@@ -25,12 +24,6 @@ export class RememberMeTokenModel extends BaseModel {
 
   @column()
   declare hash: string
-
-  @column()
-  declare type: string
-
-  @column()
-  declare guard: string
 
   @column()
   declare createdAt: Date
@@ -46,10 +39,12 @@ export class RememberMeTokenModel extends BaseModel {
  * Mixin to add support for remember me tokens on a
  * user model
  */
-export function withRememberMeTokens() {
+export function withRememberMeTokens(options?: { table?: string }) {
   return <T extends NormalizeConstructor<typeof BaseModel>>(superclass: T) => {
     return class extends superclass {
-      static rememberMeTokens = RememberMeTokenModel
+      static rememberMeTokens = class extends RememberMeTokenModel {
+        static table = options?.table ?? 'remember_me_tokens'
+      }
     }
   }
 }
