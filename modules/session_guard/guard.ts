@@ -8,7 +8,7 @@
  */
 
 import type { HttpContext } from '@adonisjs/core/http'
-import { Exception, RuntimeException } from '@adonisjs/core/exceptions'
+import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { EmitterLike } from '@adonisjs/core/types/events'
 
 import debug from './debug.js'
@@ -448,7 +448,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     let token: RememberMeToken | undefined
     if (remember) {
       if (!this.#userProvider.createRememberMeToken) {
-        throw new Exception(
+        throw new RuntimeException(
           'Cannot use "rememberMe" feature. The provider does not implement the "createRememberMeToken" method'
         )
       }

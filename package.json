@@ -21,11 +21,16 @@
   "exports": {
     ".": "./build/index.js",
     "./types": "./build/src/types.js",
+    "./types/session": "./build/modules/session_guard/types.js",
     "./auth_provider": "./build/providers/auth_provider.js",
     "./plugins/api_client": "./build/src/plugins/japa/api_client.js",
     "./plugins/browser_client": "./build/src/plugins/japa/browser_client.js",
     "./services/main": "./build/services/auth.js",
-    "./initialize_auth_middleware": "./build/src/middleware/initialize_auth_middleware.js"
+    "./initialize_auth_middleware": "./build/src/middleware/initialize_auth_middleware.js",
+    "./guards/session": "./build/modules/session_guard/main.js",
+    "./guards/session/guard": "./build/modules/session_guard/guard.js",
+    "./guards/session/models/*": "./build/modules/session_guard/models/*.js",
+    "./guards/session/providers/*": "./build/modules/session_guard/providers/*.js"
   },
   "scripts": {
     "pretest": "npm run lint",
