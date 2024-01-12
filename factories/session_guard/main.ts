@@ -58,6 +58,10 @@ export class SessionFakeUserProvider implements SessionUserProviderContract<Sess
     this.#token = token
   }
 
+  getToken() {
+    return this.#token
+  }
+
   async createUserForGuard(user: SessionFakeUser): Promise<GuardUser<SessionFakeUser>> {
     return {
       getId() {
@@ -118,6 +122,10 @@ export class SessionFakeUserProvider implements SessionUserProviderContract<Sess
   }
 
   async recycleRememberMeToken(token: RememberMeToken): Promise<void> {
+    this.#token = token
+  }
+
+  async createRememberMeToken(token: RememberMeToken): Promise<void> {
     this.#token = token
   }
 }

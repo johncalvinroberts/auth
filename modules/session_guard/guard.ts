@@ -8,12 +8,12 @@
  */
 
 import type { HttpContext } from '@adonisjs/core/http'
-import { RuntimeException } from '@adonisjs/core/exceptions'
+import { Exception, RuntimeException } from '@adonisjs/core/exceptions'
 import type { EmitterLike } from '@adonisjs/core/types/events'
 
 import debug from './debug.js'
 import { RememberMeToken } from './remember_me_token.js'
-import { E_UNAUTHORIZED_ACCESS } from '../../src/errors.js'
+import { E_INVALID_CREDENTIALS, E_UNAUTHORIZED_ACCESS } from '../../src/errors.js'
 import type { AuthClientResponse, GuardContract } from '../../src/types.js'
 import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../../src/symbols.js'
 import type {
@@ -150,6 +150,24 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     }
 
     return this.#ctx.session
+  }
+
+  /**
+   * Notifies about login failure and returns an exception
+   * to end the login process.
+   */
+  #loginFailed() {
+    const error = new E_INVALID_CREDENTIALS('Invalid user credentails', {
+      guardDriverName: this.driverName,
+    })
+
+    this.#emitter.emit('session_auth:login_failed', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      error,
+    })
+
+    return error
   }
 
   /**
@@ -336,6 +354,138 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
         guardDriverName: this.driverName,
       })
     }
+
+    return this.user
+  }
+
+  /**
+   * Verifies user credentials and returns the user instance.
+   * Under the uses the provider to find the user and
+   * verify password.
+   */
+  async verifyCredentials(uid: string, password: string) {
+    debug('attempting to verify credentials for uid "%s"', uid)
+
+    /**
+     * Attempt to verify credentials and raise error if they
+     * are invalid
+     */
+    const providerUser = await this.#userProvider.verifyCredentials(uid, password)
+    if (!providerUser) {
+      throw this.#loginFailed()
+    }
+
+    const user = providerUser.getOriginal()
+
+    /**
+     * Notify credentials have been verified
+     */
+    this.#emitter.emit('session_auth:credentials_verified', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      uid,
+      user,
+    })
+
+    return user
+  }
+
+  /**
+   * Attempt to login a user after verifying their
+   * credentials.
+   */
+  async attempt(
+    uid: string,
+    password: string,
+    remember?: boolean
+  ): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
+    const user = await this.verifyCredentials(uid, password)
+    return this.login(user, remember)
+  }
+
+  /**
+   * Login a user by user id. Queries the user using the user provider
+   * and calls "login" method under the hood.
+   */
+  async loginViaId(userId: string | number | BigInt, remember: boolean = false) {
+    debug('attempting to login user via id "%s"', userId)
+
+    const providerUser = await this.#userProvider.findById(userId)
+    if (!providerUser) {
+      throw this.#loginFailed()
+    }
+
+    return this.login(providerUser.getOriginal(), remember)
+  }
+
+  /**
+   * Login a user by setting the session state. Optionally you
+   * can create the remember me cookie to have persistent
+   * login even after the session expires.
+   */
+  async login(
+    user: UserProvider[typeof PROVIDER_REAL_USER],
+    remember: boolean = false
+  ): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
+    this.#emitter.emit('session_auth:login_attempted', {
+      ctx: this.#ctx,
+      user,
+      guardName: this.#name,
+    })
+
+    /**
+     * Creating the provider user we can use to pull the
+     * user id
+     */
+    const session = this.#getSession()
+    const providerUser = await this.#userProvider.createUserForGuard(user)
+    const userId = providerUser.getId()
+
+    /**
+     * Create remember me token and persist it with the provider
+     * when remember me token is true.
+     */
+    let token: RememberMeToken | undefined
+    if (remember) {
+      if (!this.#userProvider.createRememberMeToken) {
+        throw new Exception(
+          'Cannot use "rememberMe" feature. The provider does not implement the "createRememberMeToken" method'
+        )
+      }
+
+      debug('creating remember me cookie')
+      token = RememberMeToken.create(
+        userId,
+        this.#config.rememberMeTokenAge || '2years',
+        this.#name
+      )
+      await this.#userProvider.createRememberMeToken(token)
+      this.#createRememberMeCookie(token.value!.release())
+    } else {
+      this.#ctx.response.clearCookie(this.rememberMeKeyName)
+    }
+
+    /**
+     * Create session
+     */
+    debug('marking user with id "%s" as logged-in', userId)
+    this.#createSessionForUser(userId)
+
+    /**
+     * Update local state
+     */
+    this.user = user
+    this.isLoggedOut = false
+
+    /**
+     * Notify login succeeded
+     */
+    this.#emitter.emit('session_auth:login_succeeded', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      user,
+      sessionId: session.sessionId,
+    })
 
     return this.user
   }

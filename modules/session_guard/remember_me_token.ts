@@ -66,7 +66,7 @@ export class RememberMeToken {
    * timestamps
    */
   static create(
-    userId: string | number,
+    userId: string | number | BigInt,
     expiry: string | number,
     guard: string,
     size: number = 30
