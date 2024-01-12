@@ -23,9 +23,8 @@ import setCookieParser, { CookieMap } from 'set-cookie-parser'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
-import { SessionGuardEvents } from '../src/guards/session/types.js'
+import { SessionGuardEvents } from '../modules/session_guard/types.js'
 import { FactoryUser } from '../backup/factories/core/lucid_user_provider.js'
-import { BasicAuthGuardEvents } from '../src/guards/basic_auth/types.js'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 
@@ -123,7 +122,7 @@ export function createEmitter() {
   }
 
   const app = new AppFactory().create(test.context.fs.baseUrl, () => {})
-  return new Emitter<SessionGuardEvents<FactoryUser> & BasicAuthGuardEvents<FactoryUser>>(app)
+  return new Emitter<SessionGuardEvents<FactoryUser>>(app)
 }
 
 /**

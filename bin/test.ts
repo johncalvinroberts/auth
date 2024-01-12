@@ -9,11 +9,7 @@ configure({
   suites: [
     {
       name: 'session',
-      files: ['tests/session_guard/**/*.spec.ts'],
-    },
-    {
-      name: 'basic_auth',
-      files: ['tests/basic_auth_guard/**/*.spec.ts'],
+      files: ['tests/session/**/*.spec.ts'],
     },
     {
       name: 'auth',

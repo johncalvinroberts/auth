@@ -11,10 +11,10 @@ import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { createEmitter, parseCookies } from '../helpers.js'
-import { SessionGuard } from '../../modules/session_guard/guard.js'
-import { SessionFakeUserProvider } from '../../factories/session_guard/main.js'
-import { E_INVALID_CREDENTIALS } from '../../src/errors.js'
+import { createEmitter, parseCookies } from '../../helpers.js'
+import { SessionGuard } from '../../../modules/session_guard/guard.js'
+import { SessionFakeUserProvider } from '../../../factories/session_guard/main.js'
+import { E_INVALID_CREDENTIALS } from '../../../src/errors.js'
 
 test.group('Session guard | login', () => {
   test('create session for the user', async ({ assert }) => {

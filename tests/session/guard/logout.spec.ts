@@ -11,10 +11,10 @@ import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { createEmitter, defineCookies, parseCookies } from '../helpers.js'
-import { SessionGuard } from '../../modules/session_guard/guard.js'
-import { SessionFakeUserProvider } from '../../factories/session_guard/main.js'
-import { RememberMeToken } from '../../modules/session_guard/remember_me_token.js'
+import { createEmitter, defineCookies, parseCookies } from '../../helpers.js'
+import { SessionGuard } from '../../../modules/session_guard/guard.js'
+import { SessionFakeUserProvider } from '../../../factories/session_guard/main.js'
+import { RememberMeToken } from '../../../modules/session_guard/remember_me_token.js'
 
 test.group('Session guard | logout', () => {
   test('delete user session', async ({ assert }) => {

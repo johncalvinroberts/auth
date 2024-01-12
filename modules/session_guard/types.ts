@@ -7,11 +7,64 @@
  * file that was distributed with this source code.
  */
 
+import { HashersList } from '@adonisjs/core/types'
 import type { HttpContext } from '@adonisjs/core/http'
+import { LucidModel } from '@adonisjs/lucid/types/model'
 import type { Exception } from '@adonisjs/core/exceptions'
+import type { HasMany } from '@adonisjs/lucid/types/relations'
+import type { RememberMeTokenModel } from './models/remember_me_token.js'
 
 import type { RememberMeToken } from './remember_me_token.js'
 import type { PROVIDER_REAL_USER } from '../../src/symbols.js'
+
+/**
+ * Options accepted by the Session Lucid user provider
+ */
+export type SessionLucidUserProviderOptions<Model extends LucidAuthenticatable> = {
+  /**
+   * Define the hasher to use to hash and verify
+   * passwords
+   */
+  hasher?: keyof HashersList
+
+  /**
+   * Optionally define the connection to use when making database
+   * queries
+   */
+  connection?: string
+
+  /**
+   * Model to use for authentication
+   */
+  model: () => Promise<{ default: Model }>
+
+  /**
+   * Column name to read the hashed password
+   */
+  passwordColumnName: Extract<keyof InstanceType<Model>, string>
+
+  /**
+   * An array of uids to use when finding a user for login. Make
+   * sure all fields can be used to uniquely lookup a user.
+   */
+  uids: Extract<keyof InstanceType<Model>, string>[]
+}
+
+/**
+ * A lucid model that can be used during authentication
+ */
+export type LucidAuthenticatable = LucidModel & {
+  /**
+   * HasMany relationship to manage rememberMe tokens
+   */
+  rememberMeTokens?: HasMany<typeof RememberMeTokenModel>
+
+  /**
+   * Optional static method to customize the user lookup
+   * during "findByUid" method call.
+   */
+  getUserForAuth?(uids: string[], value: string | number): Promise<any | null>
+}
 
 /**
  * Guard user is an adapter between the user provider
@@ -44,13 +97,13 @@ export interface SessionUserProviderContract<RealUser> {
    *
    * This method is called when finding a user for login
    */
-  findByUid(userId: string | number): Promise<GuardUser<RealUser> | null>
+  findByUid(uid: string | number): Promise<GuardUser<RealUser> | null>
 
   /**
    * Find a user by unique primary id. This method is called when
    * authenticating user from their session.
    */
-  findById(uid: string | number | BigInt): Promise<GuardUser<RealUser> | null>
+  findById(userId: string | number | BigInt): Promise<GuardUser<RealUser> | null>
 
   /**
    * Find a user by uid and verify their password. This method prevents
