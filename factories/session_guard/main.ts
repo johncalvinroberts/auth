@@ -128,4 +128,10 @@ export class SessionFakeUserProvider implements SessionUserProviderContract<Sess
   async createRememberMeToken(token: RememberMeToken): Promise<void> {
     this.#token = token
   }
+
+  async deleteRememberMeTokenBySeries(series: string): Promise<void> {
+    if (this.#token && this.#token.series === series) {
+      this.#token = undefined
+    }
+  }
 }

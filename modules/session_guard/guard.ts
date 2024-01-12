@@ -561,6 +561,63 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   }
 
   /**
+   * Logout user and revoke remember me token (if any)
+   */
+  async logout() {
+    debug('session_auth: logging out')
+    const session = this.#getSession()
+    const rememberMeCookie = this.#ctx.request.encryptedCookie(this.rememberMeKeyName)
+
+    /**
+     * Clear client side state
+     */
+    session.forget(this.sessionKeyName)
+    this.#ctx.response.clearCookie(this.rememberMeKeyName)
+
+    /**
+     * Update local state
+     */
+    this.user = undefined
+    this.viaRemember = false
+    this.isAuthenticated = false
+    this.isLoggedOut = true
+
+    /**
+     * Notify the user has been logged out
+     */
+    this.#emitter.emit('session_auth:logged_out', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      user: this.user || null,
+      sessionId: session.sessionId,
+    })
+
+    /**
+     * Return early when there is no remember me cookie
+     * or if the provider does not implement the method
+     * to delete tokens
+     */
+    if (!rememberMeCookie || !this.#userProvider.deleteRememberMeTokenBySeries) {
+      return
+    }
+
+    /**
+     * Return early when remember me token is invalid
+     */
+    debug('session_auth: decoding remember me token')
+    const decodedToken = RememberMeToken.decode(rememberMeCookie)
+    if (!decodedToken) {
+      return
+    }
+
+    /**
+     * Delete the remember me token
+     */
+    debug('session_auth: deleting remember me token')
+    await this.#userProvider.deleteRememberMeTokenBySeries(decodedToken.series)
+  }
+
+  /**
    * Returns the session info for the clients to send during
    * an HTTP request to mark the user as logged-in.
    */
