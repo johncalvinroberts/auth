@@ -104,7 +104,7 @@ export async function createTables(db: Database) {
     table.integer('user_id').notNullable().unsigned()
     table.string('type').notNullable()
     table.string('guard').notNullable()
-    table.string('token', 80).notNullable()
+    table.string('hash', 80).notNullable()
     table.datetime('created_at').notNullable()
     table.datetime('updated_at').notNullable()
     table.datetime('expires_at').notNullable()

@@ -11,7 +11,6 @@ import { HashersList } from '@adonisjs/core/types'
 import type { HttpContext } from '@adonisjs/core/http'
 import { LucidModel } from '@adonisjs/lucid/types/model'
 import type { Exception } from '@adonisjs/core/exceptions'
-import type { HasMany } from '@adonisjs/lucid/types/relations'
 import type { RememberMeTokenModel } from './models/remember_me_token.js'
 
 import type { RememberMeToken } from './remember_me_token.js'
@@ -57,7 +56,7 @@ export type LucidAuthenticatable = LucidModel & {
   /**
    * HasMany relationship to manage rememberMe tokens
    */
-  rememberMeTokens?: HasMany<typeof RememberMeTokenModel>
+  rememberMeTokens?: typeof RememberMeTokenModel
 
   /**
    * Optional static method to customize the user lookup

@@ -11,6 +11,7 @@ import { Hash } from '@adonisjs/core/hash'
 import { RuntimeException } from '@poppinss/utils'
 
 import debug from '../debug.js'
+import { RememberMeToken } from '../remember_me_token.js'
 import { PROVIDER_REAL_USER } from '../../../src/symbols.js'
 import type {
   GuardUser,
@@ -84,6 +85,21 @@ export class SessionLucidUserProvider<UserModel extends LucidAuthenticatable>
   ) {}
 
   /**
+   * Returns the remember me model associated with
+   * user model
+   */
+  protected async getRememberMeModel() {
+    const model = await this.getModel()
+    if (!model.rememberMeTokens) {
+      throw new RuntimeException(
+        `Cannot perist remember me token using "${model.name}" model. Make sure to use "withRememberMeTokens" mixin`
+      )
+    }
+
+    return model.rememberMeTokens
+  }
+
+  /**
    * Imports the model from the provider, returns and caches it
    * for further operations.
    */
@@ -126,7 +142,9 @@ export class SessionLucidUserProvider<UserModel extends LucidAuthenticatable>
   /**
    * Finds a user by id using the configured model.
    */
-  async findById(value: string | number): Promise<GuardUser<InstanceType<UserModel>> | null> {
+  async findById(
+    value: string | number | BigInt
+  ): Promise<GuardUser<InstanceType<UserModel>> | null> {
     debug('lucid_user_provider: finding user by id %s', value)
 
     const model = await this.getModel()
@@ -150,7 +168,7 @@ export class SessionLucidUserProvider<UserModel extends LucidAuthenticatable>
     /**
      * Use custom lookup method when defined on the model.
      */
-    if ('getUserForAuth' in model && typeof model.getUserForAuth === 'function') {
+    if (typeof model.getUserForAuth === 'function') {
       debug('lucid_user_provider: using getUserForAuth method on "[class %s]"', model.name)
 
       const user = await model.getUserForAuth(this.options.uids, uid)
@@ -216,5 +234,73 @@ export class SessionLucidUserProvider<UserModel extends LucidAuthenticatable>
      * Invalid password, return null
      */
     return null
+  }
+
+  /**
+   * Persists the remember token to the database using the
+   * model.rememberMeTokens property
+   */
+  async createRememberMeToken(token: RememberMeToken): Promise<void> {
+    const rememberMeModel = await this.getRememberMeModel()
+    await rememberMeModel.create({
+      userId: token.userId,
+      createdAt: token.createdAt,
+      updatedAt: token.createdAt,
+      expiresAt: token.expiresAt,
+      guard: token.guard,
+      hash: token.hash,
+      series: token.series,
+      type: token.type,
+    })
+  }
+
+  /**
+   * Finds a remember me token for a user by the series.
+   * Uses model.rememberMeTokens property
+   */
+  async findRememberMeTokenBySeries(series: string): Promise<RememberMeToken | null> {
+    const rememberMeModel = await this.getRememberMeModel()
+    const token = await rememberMeModel.query().where('series', series).limit(1).first()
+    if (!token) {
+      return null
+    }
+
+    const rememberMeToken = RememberMeToken.createFromPersisted({
+      createdAt: typeof token.createdAt === 'number' ? new Date(token.createdAt) : token.createdAt,
+      updatedAt: typeof token.updatedAt === 'number' ? new Date(token.updatedAt) : token.updatedAt,
+      expiresAt: typeof token.expiresAt === 'number' ? new Date(token.expiresAt) : token.expiresAt,
+      guard: token.guard,
+      hash: token.hash,
+      series: token.series,
+      userId: token.userId,
+    })
+
+    if (rememberMeToken.isExpired() || token.type !== rememberMeToken.type) {
+      return null
+    }
+
+    return rememberMeToken
+  }
+
+  /**
+   * Updates the remember me token with new attributes. Uses
+   * model.rememberMeTokens property
+   */
+  async recycleRememberMeToken(token: RememberMeToken): Promise<void> {
+    const rememberMeModel = await this.getRememberMeModel()
+    await rememberMeModel.query().where('series', token.series).update({
+      hash: token.hash,
+      updatedAt: token.updatedAt,
+      expiresAt: token.expiresAt,
+    })
+  }
+
+  /**
+   * Deletes an existing remember me token. Uses model.rememberMeTokens
+   * property.
+   */
+  async deleteRememberMeTokenBySeries(series: string): Promise<void> {
+    const rememberMeModel = await this.getRememberMeModel()
+    await rememberMeModel.query().where('series', series).del()
   }
 }
