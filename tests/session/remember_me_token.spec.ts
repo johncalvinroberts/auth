@@ -103,6 +103,10 @@ test.group('Remember me token', () => {
   test('decode "{input}" as token')
     .with([
       {
+        input: null,
+        output: null,
+      },
+      {
         input: '',
         output: null,
       },
@@ -139,6 +143,6 @@ test.group('Remember me token', () => {
       },
     ])
     .run(({ assert }, { input, output }) => {
-      assert.deepEqual(RememberMeToken.decode(input), output)
+      assert.deepEqual(RememberMeToken.decode(input as string), output)
     })
 })

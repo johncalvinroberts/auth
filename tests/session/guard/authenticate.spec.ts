@@ -11,9 +11,9 @@ import { test } from '@japa/runner'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
-import { createEmitter, defineCookies, timeTravel } from '../../helpers.js'
 import { E_UNAUTHORIZED_ACCESS } from '../../../src/errors.js'
 import { SessionGuard } from '../../../modules/session_guard/guard.js'
+import { createEmitter, defineCookies, timeTravel } from '../../helpers.js'
 import { SessionFakeUserProvider } from '../../../factories/session_guard/main.js'
 import { RememberMeToken } from '../../../modules/session_guard/remember_me_token.js'
 
@@ -367,7 +367,7 @@ test.group('Session guard | authenticate | via remember me cookie', () => {
   })
 })
 
-test.group('Session guard | authenticate | via session', () => {
+test.group('Session guard | authenticate', () => {
   test('multiple calls to authenticate should be a noop', async ({ assert }) => {
     const ctx = new HttpContextFactory().create()
     const emitter = createEmitter()
