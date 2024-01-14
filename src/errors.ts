@@ -8,8 +8,8 @@
  */
 
 import type { I18n } from '@adonisjs/i18n'
-import { Exception } from '@poppinss/utils'
-import { HttpContext } from '@adonisjs/core/http'
+import { Exception } from '@adonisjs/core/exceptions'
+import type { HttpContext } from '@adonisjs/core/http'
 
 /**
  * The "E_UNAUTHORIZED_ACCESS" exception is raised when unable to

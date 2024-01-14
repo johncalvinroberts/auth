@@ -10,9 +10,9 @@
 /// <reference types="@japa/plugin-adonisjs" />
 /// <reference types="@adonisjs/session/plugins/browser_client" />
 
-import { RuntimeException } from '@poppinss/utils'
 import type { PluginFn } from '@japa/runner/types'
 import { decoratorsCollection } from '@japa/browser-client'
+import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { ApplicationService } from '@adonisjs/core/types'
 
 import debug from '../../debug.js'

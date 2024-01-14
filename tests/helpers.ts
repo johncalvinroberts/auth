@@ -23,9 +23,9 @@ import setCookieParser, { CookieMap } from 'set-cookie-parser'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
-import { SessionGuardEvents } from '../modules/session_guard/types.js'
-import { FactoryUser } from '../backup/factories/core/lucid_user_provider.js'
-import { AccessTokenGuardEvents } from '../modules/access_token_guard/types.js'
+// import { SessionGuardEvents } from '../modules/session_guard/types.js'
+// import { FactoryUser } from '../backup/factories/core/lucid_user_provider.js'
+// import { AccessTokenGuardEvents } from '../modules/access_token_guard/types.js'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 
@@ -101,12 +101,12 @@ export async function createTables(db: Database) {
   })
 
   await db.connection().schema.createTable('remember_me_tokens', (table) => {
-    table.string('series', 60).notNullable()
+    table.increments()
     table.integer('user_id').notNullable().unsigned()
     table.string('hash', 80).notNullable()
-    table.datetime('created_at').notNullable()
-    table.datetime('updated_at').notNullable()
-    table.datetime('expires_at').notNullable()
+    table.timestamp('created_at').notNullable()
+    table.timestamp('updated_at').notNullable()
+    table.timestamp('expires_at').notNullable()
   })
 }
 
@@ -114,15 +114,15 @@ export async function createTables(db: Database) {
  * Creates an emitter instance for testing with typed
  * events
  */
-export function createEmitter() {
-  const test = getActiveTest()
-  if (!test) {
-    throw new Error('Cannot use "createEmitter" outside of a Japa test')
-  }
+// export function createEmitter() {
+//   const test = getActiveTest()
+//   if (!test) {
+//     throw new Error('Cannot use "createEmitter" outside of a Japa test')
+//   }
 
-  const app = new AppFactory().create(test.context.fs.baseUrl, () => {})
-  return new Emitter<SessionGuardEvents<FactoryUser> & AccessTokenGuardEvents<FactoryUser>>(app)
-}
+//   const app = new AppFactory().create(test.context.fs.baseUrl, () => {})
+//   return new Emitter<SessionGuardEvents<FactoryUser> & AccessTokenGuardEvents<FactoryUser>>(app)
+// }
 
 /**
  * Promisify an event

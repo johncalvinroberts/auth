@@ -21,16 +21,11 @@
   "exports": {
     ".": "./build/index.js",
     "./types": "./build/src/types.js",
-    "./types/session": "./build/modules/session_guard/types.js",
     "./auth_provider": "./build/providers/auth_provider.js",
     "./plugins/api_client": "./build/src/plugins/japa/api_client.js",
     "./plugins/browser_client": "./build/src/plugins/japa/browser_client.js",
     "./services/main": "./build/services/auth.js",
-    "./initialize_auth_middleware": "./build/src/middleware/initialize_auth_middleware.js",
-    "./guards/session": "./build/modules/session_guard/main.js",
-    "./guards/session/guard": "./build/modules/session_guard/guard.js",
-    "./guards/session/models/*": "./build/modules/session_guard/models/*.js",
-    "./guards/session/providers/*": "./build/modules/session_guard/providers/*.js"
+    "./initialize_auth_middleware": "./build/src/middleware/initialize_auth_middleware.js"
   },
   "scripts": {
     "pretest": "npm run lint",
@@ -70,7 +65,6 @@
     "@adonisjs/i18n": "^2.0.0",
     "@adonisjs/lucid": "^19.0.0",
     "@adonisjs/prettier-config": "^1.2.1",
-    "@adonisjs/redis": "^8.0.0",
     "@adonisjs/session": "^7.0.0",
     "@adonisjs/tsconfig": "^1.2.1",
     "@commitlint/cli": "^18.4.4",
@@ -138,16 +132,15 @@
   },
   "dependencies": {
     "@adonisjs/presets": "^2.1.1",
-    "@poppinss/utils": "^6.7.0",
     "basic-auth": "^2.0.1"
   },
   "peerDependencies": {
-    "@adonisjs/core": "^6.1.5-36",
-    "@adonisjs/lucid": "^19.0.0-8",
-    "@adonisjs/session": "^7.0.0-15",
+    "@adonisjs/core": "^6.2.0",
+    "@adonisjs/lucid": "^19.0.0",
+    "@adonisjs/session": "^7.0.0",
     "@japa/api-client": "^2.0.2",
     "@japa/browser-client": "^2.0.2",
-    "@japa/plugin-adonisjs": "^2.0.1"
+    "@japa/plugin-adonisjs": "^3.0.0"
   },
   "peerDependenciesMeta": {
     "@adonisjs/lucid": {

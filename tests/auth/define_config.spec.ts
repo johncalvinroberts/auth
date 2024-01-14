@@ -8,8 +8,8 @@
  */
 
 import { test } from '@japa/runner'
-import { ApplicationService } from '@adonisjs/core/types'
 import { AppFactory } from '@adonisjs/core/factories/app'
+import type { ApplicationService } from '@adonisjs/core/types'
 
 import { AuthManager } from '../../src/auth_manager.js'
 import { FakeGuard } from '../../factories/auth/main.js'

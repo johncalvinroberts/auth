@@ -127,13 +127,13 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   getUserOrFail(): {
     [K in keyof KnownGuards]: ReturnType<ReturnType<KnownGuards[K]>['getUserOrFail']>
   }[keyof KnownGuards] {
-    if (!this.#authenticatedViaGuard) {
+    if (!this.#authenticationAttemptedViaGuard) {
       throw new RuntimeException(
         'Cannot access authenticated user. Please call "auth.authenticate" method first.'
       )
     }
 
-    return this.use(this.#authenticatedViaGuard).getUserOrFail() as {
+    return this.use(this.#authenticationAttemptedViaGuard).getUserOrFail() as {
       [K in keyof KnownGuards]: ReturnType<ReturnType<KnownGuards[K]>['getUserOrFail']>
     }[keyof KnownGuards]
   }

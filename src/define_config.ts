@@ -7,8 +7,6 @@
  * file that was distributed with this source code.
  */
 
-/// <reference types="@adonisjs/lucid/database_provider" />
-
 import { configProvider } from '@adonisjs/core'
 import type { ConfigProvider } from '@adonisjs/core/types'
 import type { GuardConfigProvider, GuardFactory } from './types.js'
