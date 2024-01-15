@@ -79,14 +79,20 @@ export async function createTables(db: Database) {
 
   test.cleanup(async () => {
     await db.connection().schema.dropTable('users')
-    await db.connection().schema.dropTable('test_tokens')
+    await db.connection().schema.dropTable('auth_access_tokens')
     await db.connection().schema.dropTable('remember_me_tokens')
   })
 
-  await db.connection().schema.createTable('test_tokens', (table) => {
-    table.string('series', 60).notNullable()
-    table.integer('user_id').notNullable().unsigned()
+  await db.connection().schema.createTable('auth_access_tokens', (table) => {
+    table.increments()
+    table.integer('tokenable_id').notNullable().unsigned()
+    table.integer('type').notNullable()
     table.string('hash', 80).notNullable()
+    table.json('abilities').notNullable()
+    table.timestamp('created_at').notNullable()
+    table.timestamp('updated_at').notNullable()
+    table.timestamp('expires_at').nullable()
+    table.timestamp('last_used_at').nullable()
   })
 
   await db.connection().schema.createTable('users', (table) => {

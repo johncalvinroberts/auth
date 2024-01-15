@@ -61,7 +61,7 @@ export type DbAccessTokensProviderOptions<TokenableModel extends LucidModel> = {
   /**
    * A unique prefix to append to the publicly shared token value.
    *
-   * Defaults to oat
+   * Defaults to oat_
    */
   prefix?: string
 }
