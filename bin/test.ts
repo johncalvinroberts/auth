@@ -12,8 +12,8 @@ configure({
       files: ['tests/session/**/*.spec.ts'],
     },
     {
-      name: 'access_token',
-      files: ['tests/access_token/**/*.spec.ts'],
+      name: 'access_tokens',
+      files: ['tests/access_tokens/**/*.spec.ts'],
     },
     {
       name: 'auth',

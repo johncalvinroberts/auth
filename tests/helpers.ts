@@ -19,13 +19,9 @@ import { Database } from '@adonisjs/lucid/database'
 import { Encryption } from '@adonisjs/core/encryption'
 import { Scrypt } from '@adonisjs/hash/drivers/scrypt'
 import { AppFactory } from '@adonisjs/core/factories/app'
-import setCookieParser, { CookieMap } from 'set-cookie-parser'
 import { LoggerFactory } from '@adonisjs/core/factories/logger'
+import setCookieParser, { type CookieMap } from 'set-cookie-parser'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
-
-// import { SessionGuardEvents } from '../modules/session_guard/types.js'
-// import { FactoryUser } from '../backup/factories/core/lucid_user_provider.js'
-// import { AccessTokenGuardEvents } from '../modules/access_token_guard/types.js'
 
 export const encryption: Encryption = new EncryptionFactory().create()
 
@@ -114,15 +110,15 @@ export async function createTables(db: Database) {
  * Creates an emitter instance for testing with typed
  * events
  */
-// export function createEmitter() {
-//   const test = getActiveTest()
-//   if (!test) {
-//     throw new Error('Cannot use "createEmitter" outside of a Japa test')
-//   }
+export function createEmitter<Events extends Record<string, any>>() {
+  const test = getActiveTest()
+  if (!test) {
+    throw new Error('Cannot use "createEmitter" outside of a Japa test')
+  }
 
-//   const app = new AppFactory().create(test.context.fs.baseUrl, () => {})
-//   return new Emitter<SessionGuardEvents<FactoryUser> & AccessTokenGuardEvents<FactoryUser>>(app)
-// }
+  const app = new AppFactory().create(test.context.fs.baseUrl, () => {})
+  return new Emitter<Events>(app)
+}
 
 /**
  * Promisify an event

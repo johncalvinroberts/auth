@@ -21,7 +21,8 @@ export type FakeUser = {
 
 /**
  * Fake guard is an implementation of the auth guard contract
- * that uses in-memory values used for testing.
+ * that uses in-memory values used for testing the auth
+ * layer.
  *
  * @note
  * Should not be exported to the outside world
