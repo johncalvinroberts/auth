@@ -147,58 +147,6 @@ export const E_INVALID_CREDENTIALS = class extends Exception {
   identifier: string = 'errors.E_INVALID_CREDENTIALS'
 
   /**
-   * The guard name reference that raised the exception. It allows
-   * us to customize the logic of handling the exception.
-   */
-  guardDriverName: string
-
-  /**
-   * A collection of renderers to render the exception to a
-   * response.
-   *
-   * The collection is a key-value pair, where the key is
-   * the guard driver name and value is a factory function
-   * to respond to the request.
-   */
-  renderers: Record<
-    string,
-    (message: string, error: this, ctx: HttpContext) => Promise<void> | void
-  > = {
-    /**
-     * Response when session driver is used
-     */
-    session: (message, error, ctx) => {
-      switch (ctx.request.accepts(['html', 'application/vnd.api+json', 'json'])) {
-        case 'html':
-        case null:
-          ctx.session.flashExcept(['_csrf'])
-          ctx.session.flashErrors({ [error.code!]: message })
-          ctx.response.redirect('back', true)
-          break
-        case 'json':
-          ctx.response.status(error.status).send({
-            errors: [
-              {
-                message,
-              },
-            ],
-          })
-          break
-        case 'application/vnd.api+json':
-          ctx.response.status(error.status).send({
-            errors: [
-              {
-                code: error.code,
-                title: message,
-              },
-            ],
-          })
-          break
-      }
-    },
-  }
-
-  /**
    * Returns the message to be sent in the HTTP response.
    * Feel free to override this method and return a custom
    * response.
@@ -210,27 +158,42 @@ export const E_INVALID_CREDENTIALS = class extends Exception {
     return error.message
   }
 
-  constructor(
-    message: string,
-    options: {
-      guardDriverName: string
-    }
-  ) {
-    super(message, {})
-    this.guardDriverName = options.guardDriverName
-  }
-
   /**
    * Converts exception to an HTTP response
    */
   async handle(error: this, ctx: HttpContext) {
-    const renderer = this.renderers[this.guardDriverName]
-    const message = error.getResponseMessage(error, ctx)
+    const message = this.getResponseMessage(error, ctx)
 
-    if (!renderer) {
-      return ctx.response.status(error.status).send(message)
+    switch (ctx.request.accepts(['html', 'application/vnd.api+json', 'json'])) {
+      case 'html':
+      case null:
+        if (ctx.session) {
+          ctx.session.flashExcept(['_csrf'])
+          ctx.session.flashErrors({ [error.code!]: message })
+          ctx.response.redirect('back', true)
+        } else {
+          ctx.response.status(error.status).send(message)
+        }
+        break
+      case 'json':
+        ctx.response.status(error.status).send({
+          errors: [
+            {
+              message,
+            },
+          ],
+        })
+        break
+      case 'application/vnd.api+json':
+        ctx.response.status(error.status).send({
+          errors: [
+            {
+              code: error.code,
+              title: message,
+            },
+          ],
+        })
+        break
     }
-
-    return renderer(message, error, ctx)
   }
 }
