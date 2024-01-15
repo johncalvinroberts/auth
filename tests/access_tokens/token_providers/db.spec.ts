@@ -206,7 +206,34 @@ test.group('Access tokens provider | DB | create', () => {
     const user = new User()
     await assert.rejects(
       () => User.authTokens.create(user),
-      'Cannot generate access token for "User" model. The value of "id" is undefined or null'
+      'Cannot use "User" model for managing access tokens. The value of column "id" is undefined or null'
+    )
+  })
+
+  test('throw error when user is not an instance of the associated model', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    class User extends BaseModel {
+      @column({ isPrimary: true })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+
+      @column()
+      declare password: string
+
+      static authTokens = DbAccessTokensProvider.forModel(User)
+    }
+
+    await assert.rejects(
+      // @ts-expect-error
+      () => User.authTokens.create({}),
+      'Invalid user object. It must be an instance of the "User" model'
     )
   })
 })

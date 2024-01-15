@@ -71,6 +71,25 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
   }
 
   /**
+   * Ensure the provided user is an instance of the user model and
+   * has a primary key
+   */
+  #ensureIsPersisted(user: InstanceType<TokenableModel>) {
+    const model = this.options.tokenableModel
+    if (user instanceof model === false) {
+      throw new RuntimeException(
+        `Invalid user object. It must be an instance of the "${model.name}" model`
+      )
+    }
+
+    if (!user.$primaryKeyValue) {
+      throw new RuntimeException(
+        `Cannot use "${model.name}" model for managing access tokens. The value of column "${model.primaryKey}" is undefined or null`
+      )
+    }
+  }
+
+  /**
    * Maps a database row to an instance token instance
    */
   protected dbRowToAccessToken(dbRow: AccessTokenDbColumns): AccessToken {
@@ -107,15 +126,9 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
     abilities: string[] = ['*'],
     expiresIn?: string | number
   ) {
-    const model = this.options.tokenableModel
-    const queryClient = await this.getDb()
-    const tokenableId = user.$primaryKeyValue
+    this.#ensureIsPersisted(user)
 
-    if (!tokenableId) {
-      throw new RuntimeException(
-        `Cannot generate access token for "${model.name}" model. The value of "${model.primaryKey}" is undefined or null`
-      )
-    }
+    const queryClient = await this.getDb()
 
     /**
      * Creating a transient token. Transient token abstracts
@@ -170,6 +183,8 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
    * Find a token for a user by the token id
    */
   async find(user: InstanceType<TokenableModel>, identifier: string | number | BigInt) {
+    this.#ensureIsPersisted(user)
+
     const queryClient = await this.getDb()
     const dbRow = await queryClient
       .query<AccessTokenDbColumns>()
@@ -192,6 +207,8 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
     user: InstanceType<TokenableModel>,
     identifier: string | number | BigInt
   ): Promise<number> {
+    this.#ensureIsPersisted(user)
+
     const queryClient = await this.getDb()
     const affectedRows = await queryClient
       .query<number>()
@@ -207,6 +224,8 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
    * Returns all the tokens a given user
    */
   async all(user: InstanceType<TokenableModel>) {
+    this.#ensureIsPersisted(user)
+
     const queryClient = await this.getDb()
     const dbRows = await queryClient
       .query<AccessTokenDbColumns>()

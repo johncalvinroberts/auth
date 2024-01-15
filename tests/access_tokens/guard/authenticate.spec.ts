@@ -333,3 +333,15 @@ test.group('Access token guard | check', () => {
     assert.isTrue(guard.authenticationAttempted)
   })
 })
+
+test.group('Access tokens guard | authenticateAsClient', () => {
+  test('throw error when using authenticateAsClient method', async ({ assert }) => {
+    const ctx = new HttpContextFactory().create()
+    const emitter = createEmitter<AccessTokensGuardEvents<AccessTokensFakeUser>>()
+    const userProvider = new AccessTokensFakeUserProvider()
+
+    const guard = new AccessTokensGuard('api', ctx, emitter, userProvider)
+    const user = await userProvider.findById(1)
+    await assert.rejects(() => guard.authenticateAsClient(user!.getOriginal()), 'Not supported')
+  })
+})
