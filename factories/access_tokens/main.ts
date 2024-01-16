@@ -71,8 +71,8 @@ export class AccessTokensFakeUserProvider
 
   async createToken(
     user: AccessTokensFakeUser,
-    expiresIn?: string | number,
-    abilities?: string[]
+    abilities?: string[],
+    expiresIn?: string | number
   ): Promise<AccessToken> {
     const transientToken = AccessToken.createTransientToken(user.id, 40, expiresIn)
     const id = stringHelpers.random(15)

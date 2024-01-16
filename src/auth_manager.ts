@@ -19,22 +19,14 @@ import { AuthenticatorClient } from './authenticator_client.js'
  */
 export class AuthManager<KnownGuards extends Record<string, GuardFactory>> {
   /**
-   * Registered guards
-   */
-  #config: {
-    default: keyof KnownGuards
-    guards: KnownGuards
-  }
-
-  /**
    * Name of the default guard
    */
   get defaultGuard() {
-    return this.#config.default
+    return this.config.default
   }
 
-  constructor(config: { default: keyof KnownGuards; guards: KnownGuards }) {
-    this.#config = config
+  constructor(public config: { default: keyof KnownGuards; guards: KnownGuards }) {
+    this.config = config
   }
 
   /**
@@ -42,7 +34,7 @@ export class AuthManager<KnownGuards extends Record<string, GuardFactory>> {
    * is used to authenticated in incoming HTTP request
    */
   createAuthenticator(ctx: HttpContext) {
-    return new Authenticator<KnownGuards>(ctx, this.#config)
+    return new Authenticator<KnownGuards>(ctx, this.config)
   }
 
   /**
@@ -50,6 +42,6 @@ export class AuthManager<KnownGuards extends Record<string, GuardFactory>> {
    * used to setup authentication state during testing.
    */
   createAuthenticatorClient() {
-    return new AuthenticatorClient<KnownGuards>(this.#config)
+    return new AuthenticatorClient<KnownGuards>(this.config)
   }
 }

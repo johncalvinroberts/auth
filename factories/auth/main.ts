@@ -65,7 +65,11 @@ export class FakeGuard implements GuardContract<FakeUser> {
     }
   }
 
-  async authenticateAsClient(_: FakeUser): Promise<AuthClientResponse> {
-    throw new Error('Not supported')
+  async authenticateAsClient(
+    _user: FakeUser,
+    _abilities?: string[],
+    _expiresIn?: string | number
+  ): Promise<AuthClientResponse> {
+    return {}
   }
 }

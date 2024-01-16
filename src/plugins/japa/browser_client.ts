@@ -24,13 +24,16 @@ declare module 'playwright' {
      * Login a user using the default authentication guard when
      * using the browser context to make page visits
      */
-    loginAs(user: {
-      [K in keyof Authenticators]: Authenticators[K] extends GuardFactory
-        ? ReturnType<Authenticators[K]> extends GuardContract<infer A>
-          ? A
+    loginAs(
+      user: {
+        [K in keyof Authenticators]: Authenticators[K] extends GuardFactory
+          ? ReturnType<Authenticators[K]> extends GuardContract<infer A>
+            ? A
+            : never
           : never
-        : never
-    }): Promise<void>
+      }[keyof Authenticators],
+      ...args: any[]
+    ): Promise<void>
 
     /**
      * Define the authentication guard for login
@@ -42,9 +45,13 @@ declare module 'playwright' {
        * Login a user using a specific auth guard
        */
       loginAs(
-        user: Authenticators[K] extends GuardFactory
-          ? ReturnType<Authenticators[K]> extends GuardContract<infer A>
-            ? A
+        user: ReturnType<Authenticators[K]> extends GuardContract<infer A> ? A : never,
+        ...args: ReturnType<Authenticators[K]> extends GuardContract<infer A>
+          ? ReturnType<Authenticators[K]>['authenticateAsClient'] extends (
+              _: A,
+              ...args: infer Args
+            ) => any
+            ? Args
             : never
           : never
       ): Promise<void>
@@ -70,10 +77,10 @@ export const authBrowserClient = (app: ApplicationService) => {
          */
         context.withGuard = function (guardName) {
           return {
-            async loginAs(user) {
+            async loginAs(...args) {
               const client = auth.createAuthenticatorClient()
               const guard = client.use(guardName) as GuardContract<unknown>
-              const requestData = await guard.authenticateAsClient(user)
+              const requestData = await guard.authenticateAsClient(...args)
 
               if (requestData.headers) {
                 throw new RuntimeException(
@@ -100,10 +107,10 @@ export const authBrowserClient = (app: ApplicationService) => {
          * Login a user using the default authentication guard when
          * using the browser context to make page visits
          */
-        context.loginAs = async function (user) {
+        context.loginAs = async function (user, ...args) {
           const client = auth.createAuthenticatorClient()
           const guard = client.use() as GuardContract<unknown>
-          const requestData = await guard.authenticateAsClient(user)
+          const requestData = await guard.authenticateAsClient(user, ...args)
 
           if (requestData.headers) {
             throw new RuntimeException(`Cannot use "${guard.driverName}" guard with browser client`)

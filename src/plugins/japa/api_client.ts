@@ -19,21 +19,24 @@ import type { Authenticators, GuardContract, GuardFactory } from '../../types.js
 declare module '@japa/api-client' {
   export interface ApiRequest {
     authData: {
-      guard: string
-      user: unknown
+      guard: keyof Authenticators | '__default__'
+      args: [unknown, ...any[]]
     }
 
     /**
      * Login a user using the default authentication guard
      * when making an API call
      */
-    loginAs(user: {
-      [K in keyof Authenticators]: Authenticators[K] extends GuardFactory
-        ? ReturnType<Authenticators[K]> extends GuardContract<infer A>
-          ? A
+    loginAs(
+      user: {
+        [K in keyof Authenticators]: Authenticators[K] extends GuardFactory
+          ? ReturnType<Authenticators[K]> extends GuardContract<infer A>
+            ? A
+            : never
           : never
-        : never
-    }): this
+      }[keyof Authenticators],
+      ...args: any[]
+    ): this
 
     /**
      * Define the authentication guard for login
@@ -46,10 +49,8 @@ declare module '@japa/api-client' {
        * Login a user using a specific auth guard
        */
       loginAs(
-        user: Authenticators[K] extends GuardFactory
-          ? ReturnType<Authenticators[K]> extends GuardContract<infer A>
-            ? A
-            : never
+        ...args: ReturnType<Authenticators[K]> extends GuardContract<any>
+          ? Parameters<ReturnType<Authenticators[K]>['authenticateAsClient']>
           : never
       ): Self
     }
@@ -68,10 +69,10 @@ export const authApiClient = (app: ApplicationService) => {
      * Login a user using the default authentication guard
      * when making an API call
      */
-    ApiRequest.macro('loginAs', function (this: ApiRequest, user) {
+    ApiRequest.macro('loginAs', function (this: ApiRequest, user, ...args: any[]) {
       this.authData = {
         guard: '__default__',
-        user: user,
+        args: [user, ...args],
       }
       return this
     })
@@ -84,10 +85,10 @@ export const authApiClient = (app: ApplicationService) => {
       Self extends ApiRequest,
     >(this: Self, guard: K) {
       return {
-        loginAs: (user) => {
+        loginAs: (...args) => {
           this.authData = {
             guard,
-            user: user,
+            args: args,
           }
           return this
         },
@@ -107,7 +108,7 @@ export const authApiClient = (app: ApplicationService) => {
       const client = auth.createAuthenticatorClient()
       const guard = authData.guard === '__default__' ? client.use() : client.use(authData.guard)
       const requestData = await (guard as GuardContract<unknown>).authenticateAsClient(
-        authData.user
+        ...authData.args
       )
 
       if (requestData.headers) {

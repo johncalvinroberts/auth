@@ -25,7 +25,7 @@ import { RuntimeException } from '@adonisjs/core/exceptions'
  * The user must be an instance of the associated user model.
  */
 export class DbAccessTokensProvider<TokenableModel extends LucidModel>
-  implements AccessTokensProviderContract
+  implements AccessTokensProviderContract<TokenableModel>
 {
   /**
    * Create tokens provider instance for a given Lucid model

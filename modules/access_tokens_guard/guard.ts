@@ -204,9 +204,16 @@ export class AccessTokensGuard<UserProvider extends AccessTokensUserProviderCont
    * the request.
    */
   async authenticateAsClient(
-    _: UserProvider[typeof PROVIDER_REAL_USER]
+    user: UserProvider[typeof PROVIDER_REAL_USER],
+    abilities?: string[],
+    expiresIn?: string | number
   ): Promise<AuthClientResponse> {
-    throw new Error('Not supported')
+    const token = await this.#userProvider.createToken(user, abilities, expiresIn)
+    return {
+      headers: {
+        authorization: `Bearer ${token.value!.release()}`,
+      },
+    }
   }
 
   /**

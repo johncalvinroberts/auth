@@ -77,10 +77,6 @@ export class AccessTokensLucidUserProvider<
     user: InstanceType<UserModel>
   ): Promise<AccessTokensGuardUser<InstanceType<UserModel>>> {
     const model = await this.getModel()
-
-    /**
-     * Ensure user is an instance of the model
-     */
     if (user instanceof model === false) {
       throw new RuntimeException(
         `Invalid user object. It must be an instance of the "${model.name}" model`
@@ -104,6 +100,25 @@ export class AccessTokensLucidUserProvider<
         return user
       },
     }
+  }
+
+  /**
+   * Create a token for a given user
+   */
+  async createToken(
+    user: InstanceType<UserModel>,
+    abilities?: string[] | undefined,
+    expiresIn?: string | number | undefined
+  ): Promise<AccessToken> {
+    const model = await this.getModel()
+    if (user instanceof model === false) {
+      throw new RuntimeException(
+        `Invalid user object. It must be an instance of the "${model.name}" model`
+      )
+    }
+
+    const tokensProvider = await this.getTokensProvider()
+    return tokensProvider.create(user, abilities, expiresIn)
   }
 
   /**

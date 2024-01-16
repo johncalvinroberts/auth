@@ -71,8 +71,11 @@ export interface GuardContract<User> {
    * The method is used to authenticate the user as client.
    * This method should return cookies, headers, or
    * session state.
+   *
+   * The rest of the arguments can be anything the guard wants
+   * to accept
    */
-  authenticateAsClient(user: User): Promise<AuthClientResponse>
+  authenticateAsClient(user: User, ...args: any[]): Promise<AuthClientResponse>
 
   /**
    * Aymbol for infer the events emitted by a specific

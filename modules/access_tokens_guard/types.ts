@@ -126,7 +126,16 @@ export type AccessTokenDbColumns = {
  * Access token providers are used verify an access token
  * during authentication
  */
-export interface AccessTokensProviderContract {
+export interface AccessTokensProviderContract<Tokenable extends LucidModel> {
+  /**
+   * Create a token for a given user
+   */
+  create(
+    user: InstanceType<Tokenable>,
+    abilities?: string[],
+    expiresIn?: string | number
+  ): Promise<AccessToken>
+
   /**
    * Verifies a publicly shared access token and returns an
    * access token for it.
@@ -139,7 +148,7 @@ export interface AccessTokensProviderContract {
  * authentication
  */
 export type LucidTokenable<TokenableProperty extends string> = LucidModel & {
-  [K in TokenableProperty]: AccessTokensProviderContract
+  [K in TokenableProperty]: AccessTokensProviderContract<LucidModel>
 }
 
 /**
@@ -180,6 +189,15 @@ export interface AccessTokensUserProviderContract<RealUser> {
    * the guard and real user value.
    */
   createUserForGuard(user: RealUser): Promise<AccessTokensGuardUser<RealUser>>
+
+  /**
+   * Create a token for a given user
+   */
+  createToken(
+    user: RealUser,
+    abilities?: string[],
+    expiresIn?: string | number
+  ): Promise<AccessToken>
 
   /**
    * Find a user by their id.
