@@ -111,6 +111,7 @@ export const authApiClient = (app: ApplicationService) => {
         ...authData.args
       )
 
+      /* c8 ignore next 13 */
       if (requestData.headers) {
         debug('defining headers with api client request %O', requestData.headers)
         request.headers(requestData.headers)

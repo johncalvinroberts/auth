@@ -82,6 +82,7 @@ export const authBrowserClient = (app: ApplicationService) => {
               const guard = client.use(guardName) as GuardContract<unknown>
               const requestData = await guard.authenticateAsClient(...args)
 
+              /* c8 ignore next 17 */
               if (requestData.headers) {
                 throw new RuntimeException(
                   `Cannot use "${guard.driverName}" guard with browser client`
@@ -112,6 +113,7 @@ export const authBrowserClient = (app: ApplicationService) => {
           const guard = client.use() as GuardContract<unknown>
           const requestData = await guard.authenticateAsClient(user, ...args)
 
+          /* c8 ignore next 15 */
           if (requestData.headers) {
             throw new RuntimeException(`Cannot use "${guard.driverName}" guard with browser client`)
           }

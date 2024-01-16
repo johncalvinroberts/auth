@@ -49,6 +49,6 @@ test.group('Authenticator client', () => {
       },
     })
 
-    await assert.rejects(() => client.use('web').authenticateAsClient({ id: 1 }), 'Not supported')
+    await assert.doesNotReject(() => client.use('web').authenticateAsClient({ id: 1 }))
   })
 })

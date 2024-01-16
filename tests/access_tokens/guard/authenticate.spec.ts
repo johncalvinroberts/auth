@@ -335,13 +335,16 @@ test.group('Access token guard | check', () => {
 })
 
 test.group('Access tokens guard | authenticateAsClient', () => {
-  test('throw error when using authenticateAsClient method', async ({ assert }) => {
+  test('create bearer token for the given user', async ({ assert }) => {
     const ctx = new HttpContextFactory().create()
     const emitter = createEmitter<AccessTokensGuardEvents<AccessTokensFakeUser>>()
     const userProvider = new AccessTokensFakeUserProvider()
 
     const guard = new AccessTokensGuard('api', ctx, emitter, userProvider)
     const user = await userProvider.findById(1)
-    await assert.rejects(() => guard.authenticateAsClient(user!.getOriginal()), 'Not supported')
+    const response = await guard.authenticateAsClient(user!.getOriginal())
+
+    assert.property(response.headers, 'authorization')
+    assert.match(response.headers!.authorization, /Bearer oat_[a-zA-Z0-9]+\.[a-zA-Z0-9]+/)
   })
 })
