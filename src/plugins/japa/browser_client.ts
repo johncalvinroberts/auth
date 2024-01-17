@@ -25,14 +25,13 @@ declare module 'playwright' {
      * using the browser context to make page visits
      */
     loginAs(
-      user: {
+      ...args: {
         [K in keyof Authenticators]: Authenticators[K] extends GuardFactory
-          ? ReturnType<Authenticators[K]> extends GuardContract<infer A>
-            ? A
+          ? ReturnType<Authenticators[K]> extends GuardContract<unknown>
+            ? Parameters<ReturnType<Authenticators[K]>['authenticateAsClient']>
             : never
           : never
-      }[keyof Authenticators],
-      ...args: any[]
+      }[keyof Authenticators]
     ): Promise<void>
 
     /**
@@ -45,14 +44,8 @@ declare module 'playwright' {
        * Login a user using a specific auth guard
        */
       loginAs(
-        user: ReturnType<Authenticators[K]> extends GuardContract<infer A> ? A : never,
-        ...args: ReturnType<Authenticators[K]> extends GuardContract<infer A>
-          ? ReturnType<Authenticators[K]>['authenticateAsClient'] extends (
-              _: A,
-              ...args: infer Args
-            ) => any
-            ? Args
-            : never
+        ...args: ReturnType<Authenticators[K]> extends GuardContract<unknown>
+          ? Parameters<ReturnType<Authenticators[K]>['authenticateAsClient']>
           : never
       ): Promise<void>
     }
@@ -80,7 +73,9 @@ export const authBrowserClient = (app: ApplicationService) => {
             async loginAs(...args) {
               const client = auth.createAuthenticatorClient()
               const guard = client.use(guardName) as GuardContract<unknown>
-              const requestData = await guard.authenticateAsClient(...args)
+              const requestData = await guard.authenticateAsClient(
+                ...(args as [user: unknown, ...any[]])
+              )
 
               /* c8 ignore next 17 */
               if (requestData.headers) {

@@ -28,14 +28,13 @@ declare module '@japa/api-client' {
      * when making an API call
      */
     loginAs(
-      user: {
+      ...args: {
         [K in keyof Authenticators]: Authenticators[K] extends GuardFactory
-          ? ReturnType<Authenticators[K]> extends GuardContract<infer A>
-            ? A
+          ? ReturnType<Authenticators[K]> extends GuardContract<unknown>
+            ? Parameters<ReturnType<Authenticators[K]>['authenticateAsClient']>
             : never
           : never
-      }[keyof Authenticators],
-      ...args: any[]
+      }[keyof Authenticators]
     ): this
 
     /**

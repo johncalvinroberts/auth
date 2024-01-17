@@ -50,7 +50,13 @@ test.group('Api client | loginAs', () => {
       })
       .runTest('sample test', async ({ browserContext }) => {
         await browserContext.loginAs({ id: 1 })
-        expectTypeOf(browserContext.loginAs).parameters.toEqualTypeOf<[FakeUser, ...any[]]>()
+        expectTypeOf(browserContext.loginAs).parameters.toEqualTypeOf<
+          [
+            user: FakeUser,
+            abilities?: string[] | undefined,
+            expiresIn?: string | number | undefined,
+          ]
+        >()
       })
 
     assert.isTrue(spy.calledOnceWithExactly({ id: 1 }))

@@ -51,7 +51,13 @@ test.group('Api client | loginAs', () => {
       .runTest('sample test', async ({ client }) => {
         const request = client.get('/')
         await request.loginAs({ id: 1 })
-        expectTypeOf(request.loginAs).parameters.toEqualTypeOf<[FakeUser, ...any[]]>()
+        expectTypeOf(request.loginAs).parameters.toEqualTypeOf<
+          [
+            user: FakeUser,
+            abilities?: string[] | undefined,
+            expiresIn?: string | number | undefined,
+          ]
+        >()
       })
 
     assert.isTrue(spy.calledOnceWithExactly({ id: 1 }))

@@ -26,8 +26,8 @@
     "./plugins/browser_client": "./build/src/plugins/japa/browser_client.js",
     "./services/main": "./build/services/auth.js",
     "./initialize_auth_middleware": "./build/src/middleware/initialize_auth_middleware.js",
-    "./access_tokens": "./build/modules/access_tokens/main.js",
-    "./types/access_tokens": "./build/modules/access_tokens/types.js"
+    "./access_tokens": "./build/modules/access_tokens_guard/main.js",
+    "./types/access_tokens": "./build/modules/access_tokens_guard/types.js"
   },
   "scripts": {
     "pretest": "npm run lint",

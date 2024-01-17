@@ -171,8 +171,9 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
    * method multiple times triggers multiple authentication with the
    * guard.
    */
-  authenticate() {
-    return this.authenticateUsing()
+  async authenticate() {
+    await this.authenticateUsing()
+    return this.getUserOrFail()
   }
 
   /**
@@ -202,7 +203,11 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
   async authenticateUsing(
     guards?: (keyof KnownGuards)[],
     options?: { loginRoute?: string }
-  ): Promise<boolean> {
+  ): Promise<
+    {
+      [K in keyof KnownGuards]: ReturnType<ReturnType<KnownGuards[K]>['getUserOrFail']>
+    }[keyof KnownGuards]
+  > {
     const guardsToUse = guards || [this.defaultGuard]
     let lastUsedDriver: string | undefined
 
@@ -215,7 +220,7 @@ export class Authenticator<KnownGuards extends Record<string, GuardFactory>> {
 
       if (await guard.check()) {
         this.#authenticatedViaGuard = guardName
-        return true
+        return this.getUserOrFail()
       }
     }
 
