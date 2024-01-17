@@ -18,9 +18,10 @@ import {
   type AccessTokensFakeUser,
   AccessTokensFakeUserProvider,
 } from '../../../factories/access_tokens/main.js'
+import { AccessToken } from '../../../modules/access_tokens_guard/access_token.js'
 
 test.group('Access tokens guard | authenticate', () => {
-  test('return user when access token is valid', async ({ assert }) => {
+  test('return user when access token is valid', async ({ assert, expectTypeOf }) => {
     const ctx = new HttpContextFactory().create()
     const emitter = createEmitter<AccessTokensGuardEvents<AccessTokensFakeUser>>()
     const userProvider = new AccessTokensFakeUserProvider()
@@ -36,9 +37,17 @@ test.group('Access tokens guard | authenticate', () => {
       guard.authenticate(),
     ])
 
+    expectTypeOf(authenticatedUser).toEqualTypeOf<
+      AccessTokensFakeUser & { currentAccessToken: AccessToken }
+    >()
+    expectTypeOf(guard.user).toEqualTypeOf<
+      (AccessTokensFakeUser & { currentAccessToken: AccessToken }) | undefined
+    >()
     assert.equal(attempted!.guardName, 'api')
     assert.equal(succeeded!.guardName, 'api')
     assert.equal(succeeded!.token.identifier, token.identifier)
+    assert.property(guard.user, 'currentAccessToken')
+    assert.instanceOf(guard.user!.currentAccessToken, AccessToken)
 
     assert.deepEqual(guard.user, authenticatedUser)
     assert.deepEqual(guard.getUserOrFail(), authenticatedUser)

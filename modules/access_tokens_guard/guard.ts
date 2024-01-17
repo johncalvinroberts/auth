@@ -11,6 +11,7 @@ import { Secret } from '@adonisjs/core/helpers'
 import type { HttpContext } from '@adonisjs/core/http'
 import type { EmitterLike } from '@adonisjs/core/types/events'
 
+import type { AccessToken } from './access_token.js'
 import { E_UNAUTHORIZED_ACCESS } from '../../src/errors.js'
 import type { AuthClientResponse, GuardContract } from '../../src/types.js'
 import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../../src/symbols.js'
@@ -22,12 +23,15 @@ import type { AccessTokensGuardEvents, AccessTokensUserProviderContract } from '
  * used to seamlessly integrate with the auth layer of the package.
  */
 export class AccessTokensGuard<UserProvider extends AccessTokensUserProviderContract<unknown>>
-  implements GuardContract<UserProvider[typeof PROVIDER_REAL_USER]>
+  implements
+    GuardContract<UserProvider[typeof PROVIDER_REAL_USER] & { currentAccessToken: AccessToken }>
 {
   /**
    * Events emitted by the guard
    */
-  declare [GUARD_KNOWN_EVENTS]: AccessTokensGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>
+  declare [GUARD_KNOWN_EVENTS]: AccessTokensGuardEvents<
+    UserProvider[typeof PROVIDER_REAL_USER] & { currentAccessToken: AccessToken }
+  >
 
   /**
    * A unique name for the guard.
@@ -47,7 +51,11 @@ export class AccessTokensGuard<UserProvider extends AccessTokensUserProviderCont
   /**
    * Emitter to emit events
    */
-  #emitter: EmitterLike<AccessTokensGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>
+  #emitter: EmitterLike<
+    AccessTokensGuardEvents<
+      UserProvider[typeof PROVIDER_REAL_USER] & { currentAccessToken: AccessToken }
+    >
+  >
 
   /**
    * Driver name of the guard
@@ -77,12 +85,16 @@ export class AccessTokensGuard<UserProvider extends AccessTokensUserProviderCont
    * You can use the "getUserOrFail" method to throw an exception if
    * the request is not authenticated.
    */
-  user?: UserProvider[typeof PROVIDER_REAL_USER]
+  user?: UserProvider[typeof PROVIDER_REAL_USER] & { currentAccessToken: AccessToken }
 
   constructor(
     name: string,
     ctx: HttpContext,
-    emitter: EmitterLike<AccessTokensGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>,
+    emitter: EmitterLike<
+      AccessTokensGuardEvents<
+        UserProvider[typeof PROVIDER_REAL_USER] & { currentAccessToken: AccessToken }
+      >
+    >,
     userProvider: UserProvider
   ) {
     this.#name = name
@@ -126,7 +138,7 @@ export class AccessTokensGuard<UserProvider extends AccessTokensUserProviderCont
    * Returns an instance of the authenticated user. Or throws
    * an exception if the request is not authenticated.
    */
-  getUserOrFail(): UserProvider[typeof PROVIDER_REAL_USER] {
+  getUserOrFail(): UserProvider[typeof PROVIDER_REAL_USER] & { currentAccessToken: AccessToken } {
     if (!this.user) {
       throw new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
         guardDriverName: this.driverName,
@@ -140,7 +152,9 @@ export class AccessTokensGuard<UserProvider extends AccessTokensUserProviderCont
    * Authenticate the current HTTP request by verifying the bearer
    * token or fails with an exception
    */
-  async authenticate(): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
+  async authenticate(): Promise<
+    UserProvider[typeof PROVIDER_REAL_USER] & { currentAccessToken: AccessToken }
+  > {
     /**
      * Return early when authentication has already
      * been attempted
@@ -184,7 +198,10 @@ export class AccessTokensGuard<UserProvider extends AccessTokensUserProviderCont
      * Update local state
      */
     this.isAuthenticated = true
-    this.user = providerUser.getOriginal()
+    this.user = providerUser.getOriginal() as UserProvider[typeof PROVIDER_REAL_USER] & {
+      currentAccessToken: AccessToken
+    }
+    this.user!.currentAccessToken = token
 
     /**
      * Notify
