@@ -121,6 +121,7 @@ test.group('AccessToken token | create', () => {
 
     const token = new AccessToken({
       identifier: '12',
+      name: 'foo',
       tokenableId: 1,
       type: 'auth_token',
       hash: '1234',
@@ -133,6 +134,7 @@ test.group('AccessToken token | create', () => {
     assert.equal(token.identifier, '12')
     assert.equal(token.hash, '1234')
     assert.equal(token.tokenableId, 1)
+    assert.equal(token.name, 'foo')
     assert.equal(token.createdAt.getTime(), createdAt.getTime())
     assert.equal(token.updatedAt.getTime(), updatedAt.getTime())
     assert.equal(token.expiresAt!.getTime(), expiresAt.getTime())
@@ -277,7 +279,10 @@ test.group('AccessToken token | create', () => {
 
     assert.deepEqual(token.toJSON(), {
       type: 'bearer',
+      name: undefined,
       token: token.value!.release(),
+      abilities: ['*'],
+      lastUsedAt: null,
       expiresAt: token.expiresAt,
     })
   })

@@ -120,6 +120,11 @@ export class AccessToken {
   value?: Secret<string>
 
   /**
+   * Recognizable name for the token
+   */
+  name?: string
+
+  /**
    * A unique type to identify a bucket of tokens inside the
    * storage layer.
    */
@@ -166,12 +171,14 @@ export class AccessToken {
     updatedAt: Date
     lastUsedAt: Date | null
     expiresAt: Date | null
+    name?: string
     prefix?: string
     secret?: Secret<string>
     abilities?: string[]
   }) {
     this.identifier = attributes.identifier
     this.tokenableId = attributes.tokenableId
+    this.name = attributes.name
     this.hash = attributes.hash
     this.type = attributes.type
     this.createdAt = attributes.createdAt
@@ -244,7 +251,10 @@ export class AccessToken {
   toJSON() {
     return {
       type: 'bearer',
+      name: this.name,
       token: this.value ? this.value.release() : undefined,
+      abilities: this.abilities,
+      lastUsedAt: this.lastUsedAt,
       expiresAt: this.expiresAt,
     }
   }
