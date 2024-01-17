@@ -13,6 +13,7 @@ import { RuntimeException } from '@adonisjs/core/exceptions'
 import { Secret, base64, safeEqual } from '@adonisjs/core/helpers'
 
 import { CRC32 } from './crc32.js'
+import { E_UNAUTHORIZED_ACCESS } from '../../src/errors.js'
 
 /**
  * Access token represents a token created for a user to authenticate
@@ -206,6 +207,15 @@ export class AccessToken {
    */
   denies(ability: string) {
     return !this.abilities.includes(ability) && !this.abilities.includes('*')
+  }
+
+  /**
+   * Authorize ability access using the current access token
+   */
+  authorize(ability: string) {
+    if (this.denies(ability)) {
+      throw new E_UNAUTHORIZED_ACCESS('Unauthorized access', { guardDriverName: 'access_tokens' })
+    }
   }
 
   /**
