@@ -92,6 +92,11 @@ export type AccessTokenDbColumns = {
   type: string
 
   /**
+   * Optional name for the token
+   */
+  name: string | null
+
+  /**
    * Token hash is used to verify the token shared
    * with the user
    */
@@ -133,7 +138,10 @@ export interface AccessTokensProviderContract<Tokenable extends LucidModel> {
   create(
     user: InstanceType<Tokenable>,
     abilities?: string[],
-    expiresIn?: string | number
+    options?: {
+      name?: string
+      expiresIn?: string | number
+    }
   ): Promise<AccessToken>
 
   /**
@@ -196,7 +204,10 @@ export interface AccessTokensUserProviderContract<RealUser> {
   createToken(
     user: RealUser,
     abilities?: string[],
-    expiresIn?: string | number
+    options?: {
+      name?: string
+      expiresIn?: string | number
+    }
   ): Promise<AccessToken>
 
   /**

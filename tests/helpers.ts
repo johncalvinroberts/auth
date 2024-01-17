@@ -87,6 +87,7 @@ export async function createTables(db: Database) {
     table.increments()
     table.integer('tokenable_id').notNullable().unsigned()
     table.integer('type').notNullable()
+    table.string('name').nullable()
     table.string('hash', 80).notNullable()
     table.json('abilities').notNullable()
     table.timestamp('created_at').notNullable()

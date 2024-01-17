@@ -122,7 +122,7 @@ export class AccessToken {
   /**
    * Recognizable name for the token
    */
-  name?: string
+  name: string
 
   /**
    * A unique type to identify a bucket of tokens inside the
@@ -171,7 +171,7 @@ export class AccessToken {
     updatedAt: Date
     lastUsedAt: Date | null
     expiresAt: Date | null
-    name?: string
+    name: string | null
     prefix?: string
     secret?: Secret<string>
     abilities?: string[]

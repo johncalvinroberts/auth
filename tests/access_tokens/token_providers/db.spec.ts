@@ -82,7 +82,7 @@ test.group('Access tokens provider | DB | create', () => {
       password: 'secret',
     })
 
-    const token = await User.authTokens.create(user, ['*'], '20 mins')
+    const token = await User.authTokens.create(user, ['*'], { expiresIn: '20 mins' })
     assert.exists(token.identifier)
     assert.instanceOf(token, AccessToken)
     assert.equal(token.tokenableId, user.id)
@@ -92,6 +92,54 @@ test.group('Access tokens provider | DB | create', () => {
     assert.instanceOf(token.createdAt, Date)
     assert.instanceOf(token.updatedAt, Date)
     assert.isDefined(token.hash)
+    assert.equal(token.type, 'auth_token')
+    assert.isTrue(token.value!.release().startsWith('oat_'))
+
+    assert.isFalse(token.isExpired())
+    timeTravel(21 * 60)
+    assert.isTrue(token.isExpired())
+  })
+
+  test('define token name', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    class User extends BaseModel {
+      @column({ isPrimary: true })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+
+      @column()
+      declare password: string
+
+      static authTokens = DbAccessTokensProvider.forModel(User)
+    }
+
+    const user = await User.create({
+      email: 'virk@adonisjs.com',
+      username: 'virk',
+      password: 'secret',
+    })
+
+    const token = await User.authTokens.create(user, ['*'], {
+      expiresIn: '20 mins',
+      name: 'List projects',
+    })
+    assert.exists(token.identifier)
+    assert.instanceOf(token, AccessToken)
+    assert.equal(token.tokenableId, user.id)
+    assert.deepEqual(token.abilities, ['*'])
+    assert.isNull(token.lastUsedAt)
+    assert.instanceOf(token.expiresAt, Date)
+    assert.instanceOf(token.createdAt, Date)
+    assert.instanceOf(token.updatedAt, Date)
+    assert.isDefined(token.hash)
+    assert.equal(token.name, 'List projects')
     assert.equal(token.type, 'auth_token')
     assert.isTrue(token.value!.release().startsWith('oat_'))
 
@@ -265,13 +313,14 @@ test.group('Access tokens provider | DB | verify', () => {
       password: 'secret',
     })
 
-    const token = await User.authTokens.create(user)
+    const token = await User.authTokens.create(user, ['*'], { name: 'List projects' })
     const freshToken = await User.authTokens.verify(new Secret(token.value!.release()))
 
     assert.instanceOf(freshToken, AccessToken)
     assert.isUndefined(freshToken!.value)
     assert.equal(freshToken!.type, token.type)
     assert.equal(freshToken!.hash, token.hash)
+    assert.equal(freshToken!.name, 'List projects')
     assert.equal(freshToken!.createdAt.getTime(), token.createdAt.getTime())
     assert.instanceOf(freshToken!.lastUsedAt, Date)
   })
@@ -302,7 +351,7 @@ test.group('Access tokens provider | DB | verify', () => {
       password: 'secret',
     })
 
-    const token = await User.authTokens.create(user, ['*'], '20 mins')
+    const token = await User.authTokens.create(user, ['*'], { expiresIn: '20 mins' })
     timeTravel(21 * 60)
 
     const freshToken = await User.authTokens.verify(new Secret(token.value!.release()))
@@ -505,12 +554,16 @@ test.group('Access tokens provider | DB | find', () => {
       password: 'secret',
     })
 
-    const token = await User.authTokens.create(user, ['*'], '20 mins')
+    const token = await User.authTokens.create(user, ['*'], {
+      expiresIn: '20 mins',
+      name: 'List projects',
+    })
     timeTravel(21 * 60)
     const freshToken = await User.authTokens.find(user, token.identifier)
 
     assert.exists(freshToken!.identifier)
     assert.instanceOf(freshToken, AccessToken)
+    assert.equal(freshToken!.name, 'List projects')
     assert.equal(freshToken!.tokenableId, user.id)
     assert.deepEqual(freshToken!.abilities, ['*'])
     assert.isNull(freshToken!.lastUsedAt)
@@ -581,7 +634,7 @@ test.group('Access tokens provider | DB | all', () => {
       password: 'secret',
     })
 
-    await User.authTokens.create(user, ['*'], '20 mins')
+    await User.authTokens.create(user, ['*'], { expiresIn: '20 mins', name: 'List projects' })
     await User.authTokens.create(user)
     timeTravel(21 * 60)
     const tokens = await User.authTokens.all(user)
@@ -610,6 +663,7 @@ test.group('Access tokens provider | DB | all', () => {
     assert.instanceOf(tokens[1].createdAt, Date)
     assert.instanceOf(tokens[1].updatedAt, Date)
     assert.isDefined(tokens[1].hash)
+    assert.equal(tokens[1].name, 'List projects')
     assert.equal(tokens[1].type, 'auth_token')
     assert.isUndefined(tokens[1].value)
     assert.isTrue(tokens[1].isExpired())
@@ -641,7 +695,7 @@ test.group('Access tokens provider | DB | all', () => {
       password: 'secret',
     })
 
-    const token = await User.authTokens.create(user, ['*'], '20 mins')
+    const token = await User.authTokens.create(user, ['*'], { expiresIn: '20 mins' })
     await User.authTokens.create(user)
 
     /**

@@ -97,6 +97,7 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
       identifier: dbRow.id,
       tokenableId: dbRow.tokenable_id,
       type: dbRow.type,
+      name: dbRow.name,
       hash: dbRow.hash,
       abilities: JSON.parse(dbRow.abilities),
       createdAt:
@@ -124,7 +125,10 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
   async create(
     user: InstanceType<TokenableModel>,
     abilities: string[] = ['*'],
-    expiresIn?: string | number
+    options?: {
+      name?: string
+      expiresIn?: string | number
+    }
   ) {
     this.#ensureIsPersisted(user)
 
@@ -138,7 +142,7 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
     const transientToken = AccessToken.createTransientToken(
       user.$primaryKeyValue!,
       this.tokenSecretLength,
-      expiresIn || this.options.expiresIn
+      options?.expiresIn || this.options.expiresIn
     )
 
     /**
@@ -148,6 +152,7 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
     const dbRow: Omit<AccessTokenDbColumns, 'id'> = {
       tokenable_id: transientToken.userId,
       type: this.type,
+      name: options?.name || null,
       hash: transientToken.hash,
       abilities: JSON.stringify(abilities),
       created_at: new Date(),
@@ -170,6 +175,7 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
       type: dbRow.type,
       prefix: this.prefix,
       secret: transientToken.secret,
+      name: dbRow.name,
       hash: dbRow.hash,
       abilities: JSON.parse(dbRow.abilities),
       createdAt: dbRow.created_at,

@@ -108,7 +108,10 @@ export class AccessTokensLucidUserProvider<
   async createToken(
     user: InstanceType<UserModel>,
     abilities?: string[] | undefined,
-    expiresIn?: string | number | undefined
+    options?: {
+      name?: string
+      expiresIn?: string | number
+    }
   ): Promise<AccessToken> {
     const model = await this.getModel()
     if (user instanceof model === false) {
@@ -118,7 +121,7 @@ export class AccessTokensLucidUserProvider<
     }
 
     const tokensProvider = await this.getTokensProvider()
-    return tokensProvider.create(user, abilities, expiresIn)
+    return tokensProvider.create(user, abilities, options)
   }
 
   /**
