@@ -253,4 +253,32 @@ test.group('AccessToken token | create', () => {
     assert.doesNotThrow(() => tokenWithPermissions.authorize('gist:read'))
     assert.throws(() => tokenWithPermissions.authorize('gist:delete'), 'Unauthorized access')
   })
+
+  test('convert token to JSON', ({ assert }) => {
+    const createdAt = new Date()
+    const updatedAt = new Date()
+    const expiresAt = new Date()
+    expiresAt.setSeconds(createdAt.getSeconds() + 60 * 20)
+
+    const transientToken = AccessToken.createTransientToken(1, 40, '20 mins')
+
+    const token = new AccessToken({
+      identifier: '12',
+      tokenableId: 1,
+      type: 'auth_token',
+      hash: transientToken.hash,
+      createdAt,
+      updatedAt,
+      expiresAt,
+      lastUsedAt: null,
+      prefix: 'oat_',
+      secret: transientToken.secret,
+    })
+
+    assert.deepEqual(token.toJSON(), {
+      type: 'bearer',
+      token: token.value!.release(),
+      expiresAt: token.expiresAt,
+    })
+  })
 })

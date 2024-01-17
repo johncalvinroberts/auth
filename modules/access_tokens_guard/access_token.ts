@@ -240,4 +240,12 @@ export class AccessToken {
     const newHash = createHash('sha256').update(secret.release()).digest('hex')
     return safeEqual(this.hash, newHash)
   }
+
+  toJSON() {
+    return {
+      type: 'bearer',
+      token: this.value ? this.value.release() : undefined,
+      expiresAt: this.expiresAt,
+    }
+  }
 }
