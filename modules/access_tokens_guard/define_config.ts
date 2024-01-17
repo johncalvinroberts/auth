@@ -22,7 +22,7 @@ import type {
 /**
  * Configures access tokens guard for authentication
  */
-export function accessTokensGuard<UserProvider extends AccessTokensUserProviderContract<unknown>>(
+export function tokensGuard<UserProvider extends AccessTokensUserProviderContract<unknown>>(
   userProvider: UserProvider | ConfigProvider<UserProvider>
 ): GuardConfigProvider<(ctx: HttpContext) => AccessTokensGuard<UserProvider>> {
   return {
@@ -38,7 +38,7 @@ export function accessTokensGuard<UserProvider extends AccessTokensUserProviderC
  * Configures user provider that uses Lucid models to verify
  * access tokens and find users during authentication.
  */
-export function accessTokensLucidProvider<
+export function tokensUserProvider<
   TokenableProperty extends string,
   Model extends LucidTokenable<TokenableProperty>,
 >(

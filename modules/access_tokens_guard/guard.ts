@@ -223,9 +223,12 @@ export class AccessTokensGuard<UserProvider extends AccessTokensUserProviderCont
   async authenticateAsClient(
     user: UserProvider[typeof PROVIDER_REAL_USER],
     abilities?: string[],
-    expiresIn?: string | number
+    options?: {
+      expiresIn?: string | number
+      name?: string
+    }
   ): Promise<AuthClientResponse> {
-    const token = await this.#userProvider.createToken(user, abilities, expiresIn)
+    const token = await this.#userProvider.createToken(user, abilities, options)
     return {
       headers: {
         authorization: `Bearer ${token.value!.release()}`,
