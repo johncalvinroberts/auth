@@ -14,12 +14,10 @@ import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
 import { E_INVALID_CREDENTIALS } from '../../src/errors.js'
 
-test.group('Errors | E_INVALID_CREDENTIALS | session', () => {
+test.group('Errors | E_INVALID_CREDENTIALS', () => {
   test('report error via flash messages and redirect', async ({ assert }) => {
     const sessionMiddleware = await new SessionMiddlewareFactory().create()
-    const error = new E_INVALID_CREDENTIALS('Invalid credentials', {
-      guardDriverName: 'session',
-    })
+    const error = new E_INVALID_CREDENTIALS('Invalid credentials')
 
     const ctx = new HttpContextFactory().create()
     await sessionMiddleware.handle(ctx, async () => {
@@ -34,9 +32,7 @@ test.group('Errors | E_INVALID_CREDENTIALS | session', () => {
   })
 
   test('respond with json', async ({ assert }) => {
-    const error = new E_INVALID_CREDENTIALS('Invalid credentials', {
-      guardDriverName: 'session',
-    })
+    const error = new E_INVALID_CREDENTIALS('Invalid credentials')
 
     const ctx = new HttpContextFactory().create()
 
@@ -57,9 +53,7 @@ test.group('Errors | E_INVALID_CREDENTIALS | session', () => {
   })
 
   test('respond with JSONAPI response', async ({ assert }) => {
-    const error = new E_INVALID_CREDENTIALS('Invalid credentials', {
-      guardDriverName: 'session',
-    })
+    const error = new E_INVALID_CREDENTIALS('Invalid credentials')
 
     const ctx = new HttpContextFactory().create()
 
@@ -81,9 +75,7 @@ test.group('Errors | E_INVALID_CREDENTIALS | session', () => {
   })
 
   test('translate error message using i18n', async ({ assert }) => {
-    const error = new E_INVALID_CREDENTIALS('Invalid credentials', {
-      guardDriverName: 'session',
-    })
+    const error = new E_INVALID_CREDENTIALS('Invalid credentials')
     const i18nManager = new I18nManagerFactory()
       .merge({
         config: {
@@ -122,19 +114,5 @@ test.group('Errors | E_INVALID_CREDENTIALS | session', () => {
         },
       ],
     })
-  })
-})
-
-test.group('Errors | E_INVALID_CREDENTIALS | unknown guard', () => {
-  test('send plain text response', async ({ assert }) => {
-    const error = new E_INVALID_CREDENTIALS('Invalid credentials', {
-      guardDriverName: 'foo',
-    })
-
-    const ctx = new HttpContextFactory().create()
-    await error.handle(error, ctx)
-
-    assert.equal(ctx.response.getStatus(), 400)
-    assert.equal(ctx.response.getBody(), 'Invalid credentials')
   })
 })
