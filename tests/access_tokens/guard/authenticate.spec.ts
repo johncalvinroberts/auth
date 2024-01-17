@@ -318,7 +318,12 @@ test.group('Access token guard | check', () => {
     const isLoggedIn = await guard.check()
 
     assert.isTrue(isLoggedIn)
-    assert.deepEqual(guard.user, { id: 1, email: 'virk@adonisjs.com', password: 'secret' })
+    assert.deepEqual(guard.user, {
+      id: 1,
+      email: 'virk@adonisjs.com',
+      password: 'secret',
+      currentAccessToken: await userProvider.verifyToken(token.value!),
+    })
     assert.isTrue(guard.isAuthenticated)
     assert.isTrue(guard.authenticationAttempted)
   })

@@ -93,6 +93,36 @@ export const E_UNAUTHORIZED_ACCESS = class extends Exception {
         .header('WWW-Authenticate', `Basic realm="Authenticate", charset="UTF-8"`)
         .send(message)
     },
+
+    /**
+     * Response when access tokens driver is used
+     */
+    access_tokens: (message, error, ctx) => {
+      switch (ctx.request.accepts(['application/vnd.api+json', 'json'])) {
+        case null:
+          ctx.response.status(error.status).send(message)
+          break
+        case 'json':
+          ctx.response.status(error.status).send({
+            errors: [
+              {
+                message,
+              },
+            ],
+          })
+          break
+        case 'application/vnd.api+json':
+          ctx.response.status(error.status).send({
+            errors: [
+              {
+                code: error.code,
+                title: message,
+              },
+            ],
+          })
+          break
+      }
+    },
   }
 
   /**
