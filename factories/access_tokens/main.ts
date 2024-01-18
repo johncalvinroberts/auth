@@ -58,6 +58,7 @@ export class AccessTokensFakeUserProvider
     tokenableId: number
     type: string
     abilities: string
+    name: string | null
     hash: string
     createdAt: Date
     updatedAt: Date
@@ -72,9 +73,12 @@ export class AccessTokensFakeUserProvider
   async createToken(
     user: AccessTokensFakeUser,
     abilities?: string[],
-    expiresIn?: string | number
+    options?: {
+      name?: string
+      expiresIn?: string | number
+    }
   ): Promise<AccessToken> {
-    const transientToken = AccessToken.createTransientToken(user.id, 40, expiresIn)
+    const transientToken = AccessToken.createTransientToken(user.id, 40, options?.expiresIn)
     const id = stringHelpers.random(15)
     const createdAt = new Date()
     const updatedAt = new Date()
@@ -83,6 +87,7 @@ export class AccessTokensFakeUserProvider
       id,
       createdAt,
       updatedAt,
+      name: options?.name || null,
       hash: transientToken.hash,
       lastUsedAt: null,
       tokenableId: user.id,
@@ -98,6 +103,7 @@ export class AccessTokensFakeUserProvider
       secret: transientToken.secret,
       prefix: 'oat_',
       type: 'auth_tokens',
+      name: options?.name || null,
       hash: transientToken.hash,
       createdAt: createdAt,
       updatedAt: updatedAt,
@@ -142,6 +148,7 @@ export class AccessTokensFakeUserProvider
       abilities: JSON.parse(token.abilities),
       tokenableId: token.tokenableId,
       type: token.type,
+      name: token.name,
       hash: token.hash,
       createdAt: token.createdAt,
       updatedAt: token.updatedAt,

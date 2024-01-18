@@ -122,7 +122,7 @@ export class AccessToken {
   /**
    * Recognizable name for the token
    */
-  name: string
+  name: string | null
 
   /**
    * A unique type to identify a bucket of tokens inside the

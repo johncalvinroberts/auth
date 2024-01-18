@@ -252,7 +252,9 @@ test.group('Access tokens guard | authenticate', () => {
     const emitter = createEmitter()
     const userProvider = new AccessTokensFakeUserProvider()
     const user = await userProvider.findById(1)
-    const token = await userProvider.createToken(user!.getOriginal(), ['*'], '20 mins')
+    const token = await userProvider.createToken(user!.getOriginal(), ['*'], {
+      expiresIn: '20 mins',
+    })
     timeTravel(21 * 60)
 
     ctx.request.request.headers.authorization = `Bearer ${token.value!.release()}`
@@ -287,7 +289,9 @@ test.group('Access tokens guard | authenticate', () => {
 
     const guard = new AccessTokensGuard('api', ctx, emitter, userProvider)
     const user = await userProvider.findById(1)
-    const token = await userProvider.createToken(user!.getOriginal(), ['*'], '20 mins')
+    const token = await userProvider.createToken(user!.getOriginal(), ['*'], {
+      expiresIn: '20 mins',
+    })
     await assert.rejects(() => guard.authenticate(), 'Unauthorized access')
 
     ctx.request.request.headers.authorization = `Bearer ${token.value!.release()}`
