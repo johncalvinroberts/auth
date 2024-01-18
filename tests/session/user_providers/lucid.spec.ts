@@ -302,3 +302,77 @@ test.group('Session user provider | Lucid | verifyToken', () => {
     assert.equal(freshToken!.createdAt.getTime(), token.createdAt.getTime())
   })
 })
+
+test.group('Session user provider | Lucid | createUserForGuard', () => {
+  test('throw error via getId when user does not have an id', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    class User extends BaseModel {
+      @column({ isPrimary: true })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+
+      @column()
+      declare password: string
+
+      static rememberMeTokens = DbRememberMeTokensProvider.forModel(User)
+    }
+
+    const userProvider = new SessionLucidUserProvider({
+      async model() {
+        return {
+          default: User,
+        }
+      },
+    })
+
+    const user = await userProvider.createUserForGuard(new User())
+    assert.throws(
+      () => user.getId(),
+      'Cannot use "User" model for authentication. The value of column "id" is undefined or null'
+    )
+  })
+
+  test('throw error via getId when user is not an instance of the associated model', async ({
+    assert,
+  }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    class User extends BaseModel {
+      @column({ isPrimary: true })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+
+      @column()
+      declare password: string
+
+      static rememberMeTokens = DbRememberMeTokensProvider.forModel(User)
+    }
+
+    const userProvider = new SessionLucidUserProvider({
+      async model() {
+        return {
+          default: User,
+        }
+      },
+    })
+
+    await assert.rejects(
+      // @ts-expect-error
+      () => userProvider.createUserForGuard({}),
+      'Invalid user object. It must be an instance of the "User" model'
+    )
+  })
+})

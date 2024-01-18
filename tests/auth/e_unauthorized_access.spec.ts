@@ -144,6 +144,114 @@ test.group('Errors | E_UNAUTHORIZED_ACCESS | session', () => {
   })
 })
 
+test.group('Errors | E_UNAUTHORIZED_ACCESS | access_tokens', () => {
+  test('convert error to a string based response', async ({ assert }) => {
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
+      guardDriverName: 'access_tokens',
+    })
+
+    const ctx = new HttpContextFactory().create()
+    await sessionMiddleware.handle(ctx, async () => {
+      return error.handle(error, ctx)
+    })
+
+    assert.isUndefined(ctx.response.getHeader('location'))
+    assert.deepEqual(ctx.response.getBody(), 'Unauthorized access')
+  })
+
+  test('respond with json', async ({ assert }) => {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
+      guardDriverName: 'access_tokens',
+    })
+
+    const ctx = new HttpContextFactory().create()
+
+    /**
+     * Force JSON response
+     */
+    ctx.request.request.headers.accept = 'application/json'
+    await error.handle(error, ctx)
+
+    assert.isUndefined(ctx.response.getHeader('location'))
+    assert.deepEqual(ctx.response.getBody(), {
+      errors: [
+        {
+          message: 'Unauthorized access',
+        },
+      ],
+    })
+  })
+
+  test('respond with JSONAPI response', async ({ assert }) => {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
+      guardDriverName: 'access_tokens',
+    })
+
+    const ctx = new HttpContextFactory().create()
+
+    /**
+     * Force JSONAPI response
+     */
+    ctx.request.request.headers.accept = 'application/vnd.api+json'
+    await error.handle(error, ctx)
+
+    assert.isUndefined(ctx.response.getHeader('location'))
+    assert.deepEqual(ctx.response.getBody(), {
+      errors: [
+        {
+          title: 'Unauthorized access',
+          code: 'E_UNAUTHORIZED_ACCESS',
+        },
+      ],
+    })
+  })
+
+  test('translate error message using i18n', async ({ assert }) => {
+    const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {
+      guardDriverName: 'access_tokens',
+    })
+    const i18nManager = new I18nManagerFactory()
+      .merge({
+        config: {
+          loaders: [
+            () => {
+              return {
+                async load() {
+                  return {
+                    en: {
+                      'errors.E_UNAUTHORIZED_ACCESS': 'Access denied',
+                    },
+                  }
+                },
+              }
+            },
+          ],
+        },
+      })
+      .create()
+
+    const ctx = new HttpContextFactory().create()
+    await i18nManager.loadTranslations()
+    ctx.i18n = i18nManager.locale('en')
+
+    /**
+     * Force JSON response
+     */
+    ctx.request.request.headers.accept = 'application/json'
+    await error.handle(error, ctx)
+
+    assert.isUndefined(ctx.response.getHeader('location'))
+    assert.deepEqual(ctx.response.getBody(), {
+      errors: [
+        {
+          message: 'Access denied',
+        },
+      ],
+    })
+  })
+})
+
 test.group('Errors | E_UNAUTHORIZED_ACCESS | basic auth', () => {
   test('handle basic auth exception with a prompt', async ({ assert }) => {
     const error = new E_UNAUTHORIZED_ACCESS('Unauthorized access', {

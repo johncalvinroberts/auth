@@ -98,6 +98,57 @@ test.group('Access tokens user provider | Lucid | verify', () => {
   })
 })
 
+test.group('Access tokens user provider | Lucid | createToken', () => {
+  test('create token for a user', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    class User extends BaseModel {
+      @column({ isPrimary: true })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+
+      @column()
+      declare password: string
+
+      static authTokens = DbAccessTokensProvider.forModel(User)
+    }
+
+    const userProvider = new AccessTokensLucidUserProvider({
+      tokens: 'authTokens',
+      async model() {
+        return {
+          default: User,
+        }
+      },
+    })
+
+    const user = await User.create({
+      email: 'virk@adonisjs.com',
+      username: 'virk',
+      password: 'secret',
+    })
+
+    const token = await userProvider.createToken(user)
+    assert.exists(token.identifier)
+    assert.instanceOf(token, AccessToken)
+    assert.equal(token.tokenableId, user.id)
+    assert.deepEqual(token.abilities, ['*'])
+    assert.isNull(token.lastUsedAt)
+    assert.isNull(token.expiresAt)
+    assert.instanceOf(token.createdAt, Date)
+    assert.instanceOf(token.updatedAt, Date)
+    assert.isDefined(token.hash)
+    assert.equal(token.type, 'auth_token')
+    assert.isTrue(token.value!.release().startsWith('oat_'))
+  })
+})
+
 test.group('Access tokens user provider | Lucid | findById', () => {
   test('find user by id', async ({ assert }) => {
     const db = await createDatabase()

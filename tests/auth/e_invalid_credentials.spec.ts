@@ -31,6 +31,18 @@ test.group('Errors | E_INVALID_CREDENTIALS', () => {
     assert.equal(ctx.response.getHeader('location'), '/')
   })
 
+  test('respond with text message when session middleware is not configured', async ({
+    assert,
+  }) => {
+    const error = new E_INVALID_CREDENTIALS('Invalid credentials')
+
+    const ctx = new HttpContextFactory().create()
+    await error.handle(error, ctx)
+
+    assert.isUndefined(ctx.response.getHeader('location'))
+    assert.deepEqual(ctx.response.getBody(), 'Invalid credentials')
+  })
+
   test('respond with json', async ({ assert }) => {
     const error = new E_INVALID_CREDENTIALS('Invalid credentials')
 

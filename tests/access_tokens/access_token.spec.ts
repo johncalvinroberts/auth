@@ -268,7 +268,6 @@ test.group('AccessToken token | create', () => {
     expiresAt.setSeconds(createdAt.getSeconds() + 60 * 20)
 
     const transientToken = AccessToken.createTransientToken(1, 40, '20 mins')
-
     const token = new AccessToken({
       identifier: '12',
       tokenableId: 1,
@@ -282,11 +281,30 @@ test.group('AccessToken token | create', () => {
       prefix: 'oat_',
       secret: transientToken.secret,
     })
+    const persistedToken = new AccessToken({
+      identifier: '12',
+      tokenableId: 1,
+      type: 'auth_token',
+      name: 'my token',
+      hash: transientToken.hash,
+      createdAt,
+      updatedAt,
+      expiresAt,
+      lastUsedAt: null,
+    })
 
     assert.deepEqual(token.toJSON(), {
       type: 'bearer',
       name: 'my token',
       token: token.value!.release(),
+      abilities: ['*'],
+      lastUsedAt: null,
+      expiresAt: token.expiresAt,
+    })
+    assert.deepEqual(persistedToken.toJSON(), {
+      type: 'bearer',
+      name: 'my token',
+      token: undefined,
       abilities: ['*'],
       lastUsedAt: null,
       expiresAt: token.expiresAt,

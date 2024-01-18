@@ -162,6 +162,40 @@ test.group('Session guard | authenticate via session', () => {
     assert.isFalse(guard.viaRemember)
     assert.isFalse(guard.attemptedViaRemember)
   })
+
+  test('mutiple calls to authenticate should be a noop', async ({ assert }) => {
+    const ctx = new HttpContextFactory().create()
+    const emitter = createEmitter<SessionGuardEvents<SessionFakeUser>>()
+    const userProvider = new SessionFakeUserProvider()
+
+    const guard = new SessionGuard(
+      'web',
+      ctx,
+      {
+        useRememberMeTokens: false,
+      },
+      emitter,
+      userProvider
+    )
+
+    /**
+     * Setup ctx with session
+     */
+    const sessionMiddleware = await new SessionMiddlewareFactory().create()
+    await sessionMiddleware.handle(ctx, async () => {})
+
+    await assert.rejects(() => guard.authenticate(), 'Invalid or expired user session')
+
+    /**
+     * Even though the session will exist from here on, the
+     * authenticate method will still fail, because it
+     * caches results from first call.
+     */
+    const user = await userProvider.findById(1)
+    ctx.session.put('auth_web', user!.getId())
+
+    await assert.rejects(() => guard.authenticate(), 'Invalid or expired user session')
+  })
 })
 
 test.group('Session guard | authenticate via remember token', () => {
@@ -663,6 +697,24 @@ test.group('Session guard | check', () => {
     assert.isFalse(guard.viaRemember)
     assert.isFalse(guard.attemptedViaRemember)
   })
+
+  test('rethrow errors other than E_AUTHORIZED_ACCESS', async () => {
+    const ctx = new HttpContextFactory().create()
+    const emitter = createEmitter<SessionGuardEvents<SessionFakeUser>>()
+    const userProvider = new SessionFakeUserProvider()
+
+    const guard = new SessionGuard(
+      'web',
+      ctx,
+      {
+        useRememberMeTokens: false,
+      },
+      emitter,
+      userProvider
+    )
+
+    await guard.check()
+  }).throws('Cannot authenticate user. Install and configure "@adonisjs/session" package')
 })
 
 test.group('Session guard | authenticateAsClient', () => {

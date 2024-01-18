@@ -8,6 +8,7 @@
  */
 
 import { Secret } from '@adonisjs/core/helpers'
+import type { LucidRow } from '@adonisjs/lucid/types/model'
 import { RuntimeException } from '@adonisjs/core/exceptions'
 
 import { AccessToken } from '../access_token.js'
@@ -114,15 +115,8 @@ export class AccessTokensLucidUserProvider<
       expiresIn?: string | number
     }
   ): Promise<AccessToken> {
-    const model = await this.getModel()
-    if (user instanceof model === false) {
-      throw new RuntimeException(
-        `Invalid user object. It must be an instance of the "${model.name}" model`
-      )
-    }
-
     const tokensProvider = await this.getTokensProvider()
-    return tokensProvider.create(user, abilities, options)
+    return tokensProvider.create(user as LucidRow, abilities, options)
   }
 
   /**

@@ -98,7 +98,8 @@ export const E_UNAUTHORIZED_ACCESS = class extends Exception {
      * Response when access tokens driver is used
      */
     access_tokens: (message, error, ctx) => {
-      switch (ctx.request.accepts(['application/vnd.api+json', 'json'])) {
+      switch (ctx.request.accepts(['html', 'application/vnd.api+json', 'json'])) {
+        case 'html':
         case null:
           ctx.response.status(error.status).send(message)
           break
