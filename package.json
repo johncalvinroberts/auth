@@ -5,15 +5,10 @@
   "type": "module",
   "main": "build/index.js",
   "files": [
-    "build/configure.js",
-    "build/configure.d.ts",
-    "build/index.js",
-    "build/index.d.ts",
-    "build/factories",
-    "build/providers",
-    "build/services",
-    "build/src",
-    "build/stubs"
+    "build",
+    "!build/bin",
+    "!build/tests",
+    "!build/factories"
   ],
   "engines": {
     "node": ">=18.16.0"
@@ -34,18 +29,20 @@
   "scripts": {
     "pretest": "npm run lint",
     "test": "c8 npm run quick:test",
-    "quick:test": "cross-env NODE_DEBUG=\"adonisjs:auth:*\" node --enable-source-maps --loader=ts-node/esm ./bin/test.js",
     "clean": "del-cli build",
-    "copy:templates": "copyfiles \"stubs/**/**/*.stub\" build",
-    "compile": "npm run lint && npm run clean && tsc && npm run copy:templates",
+    "typecheck": "tsc --noEmit",
+    "copy:templates": "copyfiles \"stubs/**/*.stub\" --up=\"1\" build",
+    "precompile": "npm run lint && npm run clean",
+    "compile": "tsup-node && tsc --emitDeclarationOnly --declaration",
+    "postcompile": "npm run copy:templates",
     "build": "npm run compile",
-    "release": "np",
-    "version": "npm run build",
     "prepublishOnly": "npm run build",
     "lint": "eslint . --ext=.ts",
-    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "release": "np",
+    "version": "npm run build",
     "sync-labels": "github-label-sync --labels .github/labels.json adonisjs/auth",
-    "format": "prettier --write ."
+    "quick:test": "cross-env NODE_DEBUG=\"adonisjs:auth:*\" node --enable-source-maps --loader=ts-node/esm ./bin/test.js"
   },
   "keywords": [
     "adonisjs",
@@ -105,6 +102,7 @@
     "sqlite3": "^5.1.7",
     "timekeeper": "^2.3.1",
     "ts-node": "^10.9.2",
+    "tsup": "^8.0.1",
     "typescript": "^5.3.3"
   },
   "prettier": "@adonisjs/prettier-config",
@@ -165,5 +163,26 @@
     "@japa/plugin-adonisjs": {
       "optional": true
     }
+  },
+  "tsup": {
+    "entry": [
+      "./index.ts",
+      "./src/types.ts",
+      "./providers/auth_provider.ts",
+      "./src/plugins/japa/api_client.ts",
+      "./src/plugins/japa/browser_client.ts",
+      "./services/auth.ts",
+      "./src/middleware/initialize_auth_middleware.ts",
+      "./modules/access_tokens_guard/main.ts",
+      "./modules/access_tokens_guard/types.ts",
+      "./modules/session_guard/main.ts",
+      "./modules/session_guard/types.ts"
+    ],
+    "outDir": "./build",
+    "clean": true,
+    "format": "esm",
+    "dts": false,
+    "sourcemap": true,
+    "target": "esnext"
   }
 }

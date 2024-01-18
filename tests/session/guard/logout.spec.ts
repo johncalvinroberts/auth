@@ -13,8 +13,7 @@ import { SessionMiddlewareFactory } from '@adonisjs/session/factories'
 
 import { SessionGuard } from '../../../modules/session_guard/guard.js'
 import { SessionGuardEvents } from '../../../modules/session_guard/types.js'
-import { RememberMeToken } from '../../../modules/session_guard/remember_me_token.js'
-import { createEmitter, defineCookies, pEvent, parseCookies, timeTravel } from '../../helpers.js'
+import { createEmitter, defineCookies, parseCookies } from '../../helpers.js'
 import {
   SessionFakeUser,
   SessionFakeUserProvider,
