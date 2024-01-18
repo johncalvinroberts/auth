@@ -8,6 +8,7 @@
  */
 
 import type { Secret } from '@adonisjs/core/helpers'
+import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
 
 import { AccessToken } from '../access_token.js'
@@ -16,7 +17,6 @@ import type {
   AccessTokensProviderContract,
   DbAccessTokensProviderOptions,
 } from '../types.js'
-import { RuntimeException } from '@adonisjs/core/exceptions'
 
 /**
  * DbAccessTokensProvider uses lucid database service to fetch and

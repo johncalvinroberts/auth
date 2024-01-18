@@ -35,14 +35,6 @@ export type DbRememberMeTokensProviderOptions<TokenableModel extends LucidModel>
   table?: string
 
   /**
-   * The default expiry for all the tokens. You can also customize
-   * expiry at the time of creating a token as well.
-   *
-   * Defaults to "2 years"
-   */
-  expiresIn?: string | number
-
-  /**
    * The length for the token secret. A secret is a cryptographically
    * secure random string.
    *
@@ -68,6 +60,11 @@ export interface RememberMeTokensProviderContract<Tokenable extends LucidModel> 
   verify(tokenValue: Secret<string>): Promise<RememberMeToken | null>
 
   /**
+   * Delete token for a user by the token identifier.
+   */
+  delete(user: InstanceType<Tokenable>, identifier: string | number | BigInt): Promise<number>
+
+  /**
    * Recycle an existing token by its id. Recycling tokens helps
    * detect compromised tokens.
    * https://web.archive.org/web/20130214051957/http://jaspan.com/improved_persistent_login_cookie_best_practice
@@ -77,6 +74,26 @@ export interface RememberMeTokensProviderContract<Tokenable extends LucidModel> 
     identifier: string | number | BigInt,
     expiresIn: string | number
   ): Promise<RememberMeToken>
+}
+
+/**
+ * A lucid model with a tokens provider to verify remember me tokens during
+ * authentication
+ */
+export type LucidAuthenticatable = LucidModel & {
+  rememberMeTokens?: RememberMeTokensProviderContract<LucidModel>
+}
+
+/**
+ * Options accepted by the user provider that uses a lucid
+ * model to lookup a user during authentication and verify
+ * tokens
+ */
+export type SessionLucidUserProviderOptions<Model extends LucidAuthenticatable> = {
+  /**
+   * The model to use for users lookup
+   */
+  model: () => Promise<{ default: Model }>
 }
 
 /**
@@ -146,30 +163,62 @@ export interface SessionUserProviderContract<RealUser> {
    * Find a user by their id.
    */
   findById(identifier: string | number | BigInt): Promise<SessionGuardUser<RealUser> | null>
+}
 
+/**
+ * The user provider used by session guard with support for tokens
+ */
+export interface SessionWithTokensUserProviderContract<RealUser>
+  extends SessionUserProviderContract<RealUser> {
   /**
-   * Create a token for a given user.
+   * Create a token for a given user. Must be implemented when
+   * "supportsRememberMeTokens" flag is true
    */
-  createRememberToken(user: RealUser, expiresIn?: string | number): Promise<RememberMeToken>
+  createRememberToken(user: RealUser, expiresIn: string | number): Promise<RememberMeToken>
 
   /**
-   * Verify a token by its publicly shared value.
+   * Verify a token by its publicly shared value. Must be implemented when
+   * "supportsRememberMeTokens" flag is true
    */
   verifyRememberToken(tokenValue: Secret<string>): Promise<RememberMeToken | null>
 
   /**
-   * Recycle a token for a user by the token identifier.
+   * Recycle a token for a user by the token identifier. Must be
+   * implemented when "supportsRememberMeTokens" flag is true
    */
   recycleRememberToken(
     user: RealUser,
-    identifier: string | number | BigInt,
-    expiresIn?: string | number
+    tokenIdentifier: string | number | BigInt,
+    expiresIn: string | number
   ): Promise<RememberMeToken>
 
   /**
-   * Delete a token for a user by the token identifier.
+   * Delete a token for a user by the token identifier. Must be
+   * implemented when "supportsRememberMeTokens" flag is true
    */
-  deleteRemeberToken(user: RealUser, identifier: string | number | BigInt): Promise<number>
+  deleteRemeberToken(user: RealUser, tokenIdentifier: string | number | BigInt): Promise<number>
+}
+
+/**
+ * Options accepted by the session guard
+ */
+export type SessionGuardOptions<UseRememberTokens extends boolean> = {
+  /**
+   * Whether or not use remember me tokens during authentication
+   * and login.
+   *
+   * If enabled, the provided user provider must implement the APIs
+   * needed to manage remember me tokens
+   */
+  useRememberMeTokens: UseRememberTokens
+
+  /**
+   * The age of remember me tokens after which they
+   * should expire.
+   *
+   * Defaults to "2 years"
+   */
+  rememberMeTokensAge?: string | number
 }
 
 /**

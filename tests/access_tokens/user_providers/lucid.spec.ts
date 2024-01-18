@@ -16,7 +16,7 @@ import { AccessToken } from '../../../modules/access_tokens_guard/access_token.j
 import { DbAccessTokensProvider } from '../../../modules/access_tokens_guard/token_providers/db.js'
 import { AccessTokensLucidUserProvider } from '../../../modules/access_tokens_guard/user_providers/lucid.js'
 
-test.group('Access user provider | Lucid', () => {
+test.group('Access tokens user provider | Lucid', () => {
   test('throw error when user does not implement a token provider', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
@@ -46,12 +46,12 @@ test.group('Access user provider | Lucid', () => {
 
     await assert.rejects(
       () => userProvider.verifyToken(new Secret('foo')),
-      'Cannot use "User" for verifying access tokens. Make sure to assign a token provider to the model.'
+      'Cannot use "User" model for verifying access tokens. Make sure to assign a token provider to the model.'
     )
   })
 })
 
-test.group('Access user provider | Lucid | verify', () => {
+test.group('Access tokens user provider | Lucid | verify', () => {
   test('return access token when it is valid', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
@@ -98,7 +98,7 @@ test.group('Access user provider | Lucid | verify', () => {
   })
 })
 
-test.group('Access user provider | Lucid | findById', () => {
+test.group('Access tokens user provider | Lucid | findById', () => {
   test('find user by id', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
@@ -185,7 +185,7 @@ test.group('Access user provider | Lucid | findById', () => {
   })
 })
 
-test.group('Access user provider | Lucid | createUserForGuard', () => {
+test.group('Access tokens user provider | Lucid | createUserForGuard', () => {
   test('throw error via getId when user does not have an id', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)

@@ -8,6 +8,7 @@
  */
 
 import type { Secret } from '@adonisjs/core/helpers'
+import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
 
 import { RememberMeToken } from '../remember_me_token.js'
@@ -16,10 +17,9 @@ import type {
   RememberMeTokensProviderContract,
   DbRememberMeTokensProviderOptions,
 } from '../types.js'
-import { RuntimeException } from '@adonisjs/core/exceptions'
 
 /**
- * DbAccessTokensProvider uses lucid database service to fetch and
+ * DbRememberMeTokensProvider uses lucid database service to fetch and
  * persist tokens for a given user.
  *
  * The user must be an instance of the associated user model.
@@ -41,12 +41,7 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
   }
 
   /**
-   * Duration after which the token should expire
-   */
-  protected expiresIn: string | number
-
-  /**
-   * Database table to use for querying access tokens
+   * Database table to use for querying remember me tokens
    */
   protected table: string
 
@@ -58,7 +53,6 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
 
   constructor(protected options: DbRememberMeTokensProviderOptions<TokenableModel>) {
     this.table = options.table || 'remember_me_tokens'
-    this.expiresIn = options.expiresIn || '2 years'
     this.tokenSecretLength = options.tokenSecretLength || 40
   }
 
@@ -84,7 +78,7 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
   /**
    * Maps a database row to an instance token instance
    */
-  protected dbRowToAccessToken(dbRow: RememberMeTokenDbColumns): RememberMeToken {
+  protected dbRowToRememberMeToken(dbRow: RememberMeTokenDbColumns): RememberMeToken {
     return new RememberMeToken({
       identifier: dbRow.id,
       tokenableId: dbRow.tokenable_id,
@@ -109,7 +103,7 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
   /**
    * Create a token for a user
    */
-  async create(user: InstanceType<TokenableModel>, expiresIn?: string | number) {
+  async create(user: InstanceType<TokenableModel>, expiresIn: string | number) {
     this.#ensureIsPersisted(user)
 
     const queryClient = await this.getDb()
@@ -122,7 +116,7 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
     const transientToken = RememberMeToken.createTransientToken(
       user.$primaryKeyValue!,
       this.tokenSecretLength,
-      expiresIn || this.expiresIn
+      expiresIn
     )
 
     /**
@@ -143,7 +137,7 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
     const [id] = await queryClient.table(this.table).insert(dbRow)
 
     /**
-     * Convert db row to an access token
+     * Convert db row to a remember token
      */
     return new RememberMeToken({
       identifier: id,
@@ -174,7 +168,7 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
       return null
     }
 
-    return this.dbRowToAccessToken(dbRow)
+    return this.dbRowToRememberMeToken(dbRow)
   }
 
   /**
@@ -212,13 +206,13 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
       .exec()
 
     return dbRows.map((dbRow) => {
-      return this.dbRowToAccessToken(dbRow)
+      return this.dbRowToRememberMeToken(dbRow)
     })
   }
 
   /**
-   * Verifies a publicly shared access token and returns an
-   * access token for it.
+   * Verifies a publicly shared remember me token and returns an
+   * RememberMeToken for it.
    *
    * Returns null when unable to verify the token or find it
    * inside the storage
@@ -242,18 +236,18 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
     }
 
     /**
-     * Convert to access token instance
+     * Convert to remember me token instance
      */
-    const accessToken = this.dbRowToAccessToken(dbRow)
+    const rememberMeToken = this.dbRowToRememberMeToken(dbRow)
 
     /**
      * Ensure the token secret matches the token hash
      */
-    if (!accessToken.verify(decodedToken.secret) || accessToken.isExpired()) {
+    if (!rememberMeToken.verify(decodedToken.secret) || rememberMeToken.isExpired()) {
       return null
     }
 
-    return accessToken
+    return rememberMeToken
   }
 
   /**
@@ -267,7 +261,7 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
   async recycle(
     user: InstanceType<TokenableModel>,
     identifier: string | number | BigInt,
-    expiresIn?: string | number
+    expiresIn: string | number
   ): Promise<RememberMeToken> {
     await this.delete(user, identifier)
     return this.create(user, expiresIn)

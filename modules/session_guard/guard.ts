@@ -16,14 +16,23 @@ import { RememberMeToken } from './remember_me_token.js'
 import { E_UNAUTHORIZED_ACCESS } from '../../src/errors.js'
 import type { AuthClientResponse, GuardContract } from '../../src/types.js'
 import { GUARD_KNOWN_EVENTS, PROVIDER_REAL_USER } from '../../src/symbols.js'
-import type { SessionGuardEvents, SessionUserProviderContract } from './types.js'
+import type {
+  SessionGuardEvents,
+  SessionGuardOptions,
+  SessionUserProviderContract,
+  SessionWithTokensUserProviderContract,
+} from './types.js'
 
 /**
  * Session guard uses AdonisJS session store to track logged-in
  * user information.
  */
-export class SessionGuard<UserProvider extends SessionUserProviderContract<unknown>>
-  implements GuardContract<UserProvider[typeof PROVIDER_REAL_USER]>
+export class SessionGuard<
+  UseRememberTokens extends boolean,
+  UserProvider extends UseRememberTokens extends true
+    ? SessionWithTokensUserProviderContract<unknown>
+    : SessionUserProviderContract<unknown>,
+> implements GuardContract<UserProvider[typeof PROVIDER_REAL_USER]>
 {
   /**
    * Events emitted by the guard
@@ -39,6 +48,11 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * Reference to the current HTTP context
    */
   #ctx: HttpContext
+
+  /**
+   * Options accepted by the session guard
+   */
+  #options: Required<SessionGuardOptions<UseRememberTokens>>
 
   /**
    * Provider to lookup user details
@@ -62,6 +76,12 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   authenticationAttempted = false
 
   /**
+   * A boolean to know if a remember me token was used in attempt
+   * to login a user.
+   */
+  attemptedViaRemember = false
+
+  /**
    * A boolean to know if the current request has
    * been authenticated
    */
@@ -72,12 +92,6 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    * using the "rememember_me" token.
    */
   viaRemember = false
-
-  /**
-   * A boolean to know if a remember me token was used in attempt
-   * to login a user.
-   */
-  attemptedViaRemember = false
 
   /**
    * Find if the user has been logged out during
@@ -116,11 +130,13 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   constructor(
     name: string,
     ctx: HttpContext,
+    options: SessionGuardOptions<UseRememberTokens>,
     emitter: EmitterLike<SessionGuardEvents<UserProvider[typeof PROVIDER_REAL_USER]>>,
     userProvider: UserProvider
   ) {
     this.#name = name
     this.#ctx = ctx
+    this.#options = { rememberMeTokensAge: '2 years', ...options }
     this.#emitter = emitter
     this.#userProvider = userProvider
   }
@@ -140,10 +156,14 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   }
 
   /**
-   * Emits authentication failure and returns an exception
-   * to end the authentication cycle.
+   * Emits authentication failure, updates the local state,
+   * and returns an exception to end the authentication
+   * cycle.
    */
   #authenticationFailed(sessionId: string) {
+    this.isAuthenticated = false
+    this.viaRemember = false
+
     const error = new E_UNAUTHORIZED_ACCESS('Invalid or expired user session', {
       guardDriverName: this.driverName,
     })
@@ -182,27 +202,6 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   }
 
   /**
-   * Authenticates the user using its id read from the session
-   * store.
-   *
-   * - We check the user exists in the db
-   * - If not, throw exception.
-   * - Otherwise, update local state to mark the user as logged-in
-   */
-  async #authenticateViaId(userId: string | number | BigInt, sessionId: string) {
-    /**
-     * Check the user exists with the provider
-     */
-    const providerUser = await this.#userProvider.findById(userId)
-    if (!providerUser) {
-      throw this.#authenticationFailed(sessionId)
-    }
-
-    this.#authenticationSucceeded(sessionId, providerUser.getOriginal())
-    return this.user
-  }
-
-  /**
    * Creates session for a given user by their user id.
    */
   #createSessionForUser(userId: string | number | BigInt) {
@@ -214,11 +213,29 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
   /**
    * Creates the remember me cookie
    */
-  #createRememberMeCookie(value: string) {
-    this.#ctx.response.encryptedCookie(this.rememberMeKeyName, value, {
-      // maxAge: this.#config.rememberMeTokenAge,
+  #createRememberMeCookie(value: Secret<string>) {
+    this.#ctx.response.encryptedCookie(this.rememberMeKeyName, value.release(), {
+      maxAge: this.#options.rememberMeTokensAge,
       httpOnly: true,
     })
+  }
+
+  /**
+   * Authenticates the user using its id read from the session
+   * store.
+   *
+   * - We check the user exists in the db
+   * - If not, throw exception.
+   * - Otherwise, update local state to mark the user as logged-in
+   */
+  async #authenticateViaId(userId: string | number | BigInt, sessionId: string) {
+    const providerUser = await this.#userProvider.findById(userId)
+    if (!providerUser) {
+      throw this.#authenticationFailed(sessionId)
+    }
+
+    this.#authenticationSucceeded(sessionId, providerUser.getOriginal())
+    return this.user!
   }
 
   /**
@@ -227,9 +244,17 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    */
   async #authenticateViaRememberCookie(rememberMeCookie: string, sessionId: string) {
     /**
+     * This method is only invoked when "options.useRememberTokens" is set to
+     * true and hence the user provider will have methods to manage tokens
+     */
+    const userProvider = this.#userProvider as SessionWithTokensUserProviderContract<
+      UserProvider[typeof PROVIDER_REAL_USER]
+    >
+
+    /**
      * Verify the token using the user provider.
      */
-    const token = await this.#userProvider.verifyRememberToken(new Secret(rememberMeCookie))
+    const token = await userProvider.verifyRememberToken(new Secret(rememberMeCookie))
     if (!token) {
       throw this.#authenticationFailed(sessionId)
     }
@@ -238,7 +263,7 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      * Check if a user for the token exists. Otherwise abort
      * authentication
      */
-    const providerUser = await this.#userProvider.findById(token.tokenableId)
+    const providerUser = await userProvider.findById(token.tokenableId)
     if (!providerUser) {
       throw this.#authenticationFailed(sessionId)
     }
@@ -254,12 +279,17 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
      */
     this.#authenticationSucceeded(sessionId, providerUser.getOriginal(), token)
 
-    const recycledToken = await this.#userProvider.recycleRememberToken(
+    /**
+     * Recycle remember token and the remember me cookie
+     */
+    const recycledToken = await userProvider.recycleRememberToken(
       this.user!,
-      token.identifier
+      token.identifier,
+      this.#options.rememberMeTokensAge
     )
-    this.#createRememberMeCookie(recycledToken.value!.release())
-    return this.user
+    this.#createRememberMeCookie(recycledToken.value!)
+
+    return this.user!
   }
 
   /**
@@ -282,8 +312,8 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
    */
   async authenticate(): Promise<UserProvider[typeof PROVIDER_REAL_USER]> {
     /**
-     * Return early when authentication has already
-     * been attempted
+     * Return early when authentication has already been
+     * attempted
      */
     if (this.authenticationAttempted) {
       return this.getUserOrFail()
@@ -312,14 +342,20 @@ export class SessionGuard<UserProvider extends SessionUserProviderContract<unkno
     }
 
     /**
-     * If rememberMeCookie exists then attempt to authenticate via the
-     * remember me cookie
+     * If user provider supports remember me tokens and the remember me
+     * cookie exists, then attempt to login + authenticate via
+     * the remember me token.
      */
     const rememberMeCookie = this.#ctx.request.encryptedCookie(this.rememberMeKeyName)
-    if (rememberMeCookie) {
+    if (rememberMeCookie && this.#options.useRememberMeTokens) {
       this.attemptedViaRemember = true
       return this.#authenticateViaRememberCookie(rememberMeCookie, session.sessionId)
     }
+
+    /**
+     * Otherwise throw an exception
+     */
+    throw this.#authenticationFailed(session.sessionId)
   }
 
   /**

@@ -157,8 +157,6 @@ export class RememberMeToken {
    * Check if the token has been expired. Verifies
    * the "expiresAt" timestamp with the current
    * date.
-   *
-   * Tokens with no expiry never expire
    */
   isExpired() {
     return this.expiresAt < new Date()

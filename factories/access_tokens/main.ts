@@ -43,8 +43,8 @@ const users: AccessTokensFakeUser[] = [
 ]
 
 /**
- * Implementation of a user provider to be used by session guard for
- * authentication. Used for testing.
+ * Implementation of a user provider to be used by access tokens
+ * guard for authentication. Used for testing.
  *
  * @note
  * Should not be exported to the outside world

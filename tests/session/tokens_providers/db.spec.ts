@@ -42,43 +42,6 @@ test.group('RememberMe tokens provider | DB | create', () => {
       password: 'secret',
     })
 
-    const token = await User.rememberMeTokens.create(user)
-    assert.exists(token.identifier)
-    assert.instanceOf(token, RememberMeToken)
-    assert.equal(token.tokenableId, user.id)
-    assert.instanceOf(token.expiresAt, Date)
-    assert.instanceOf(token.createdAt, Date)
-    assert.instanceOf(token.updatedAt, Date)
-    assert.isDefined(token.hash)
-    assert.exists(token.value)
-  })
-
-  test('define token expiry at the time of generating it', async ({ assert }) => {
-    const db = await createDatabase()
-    await createTables(db)
-
-    class User extends BaseModel {
-      @column({ isPrimary: true })
-      declare id: number
-
-      @column()
-      declare username: string
-
-      @column()
-      declare email: string
-
-      @column()
-      declare password: string
-
-      static rememberMeTokens = DbRememberMeTokensProvider.forModel(User)
-    }
-
-    const user = await User.create({
-      email: 'virk@adonisjs.com',
-      username: 'virk',
-      password: 'secret',
-    })
-
     const token = await User.rememberMeTokens.create(user, '20 mins')
     assert.exists(token.identifier)
     assert.instanceOf(token, RememberMeToken)
@@ -116,7 +79,7 @@ test.group('RememberMe tokens provider | DB | create', () => {
 
     const user = new User()
     await assert.rejects(
-      () => User.rememberMeTokens.create(user),
+      () => User.rememberMeTokens.create(user, '20 mins'),
       'Cannot use "User" model for managing remember me tokens. The value of column "id" is undefined or null'
     )
   })
@@ -143,7 +106,7 @@ test.group('RememberMe tokens provider | DB | create', () => {
 
     await assert.rejects(
       // @ts-expect-error
-      () => User.rememberMeTokens.create({}),
+      () => User.rememberMeTokens.create({}, '20 mins'),
       'Invalid user object. It must be an instance of the "User" model'
     )
   })
@@ -176,7 +139,7 @@ test.group('RememberMe tokens provider | DB | verify', () => {
       password: 'secret',
     })
 
-    const token = await User.rememberMeTokens.create(user)
+    const token = await User.rememberMeTokens.create(user, '20 mins')
     const freshToken = await User.rememberMeTokens.verify(new Secret(token.value!.release()))
 
     assert.instanceOf(freshToken, RememberMeToken)
@@ -245,7 +208,7 @@ test.group('RememberMe tokens provider | DB | verify', () => {
       password: 'secret',
     })
 
-    const token = await User.rememberMeTokens.create(user)
+    const token = await User.rememberMeTokens.create(user, '20 mins')
     await User.rememberMeTokens.delete(user, token.identifier)
 
     const freshToken = await User.rememberMeTokens.verify(new Secret(token.value!.release()))
@@ -302,7 +265,7 @@ test.group('RememberMe tokens provider | DB | verify', () => {
       password: 'secret',
     })
 
-    const token = await User.rememberMeTokens.create(user)
+    const token = await User.rememberMeTokens.create(user, '20 mins')
     const value = token.value!.release()
     const [identifier] = value.split('.')
 
@@ -338,7 +301,7 @@ test.group('RememberMe tokens provider | DB | find', () => {
       password: 'secret',
     })
 
-    const token = await User.rememberMeTokens.create(user)
+    const token = await User.rememberMeTokens.create(user, '20 mins')
     const freshToken = await User.rememberMeTokens.find(user, token.identifier)
 
     assert.exists(freshToken!.identifier)
@@ -451,7 +414,7 @@ test.group('RememberMe tokens provider | DB | all', () => {
     })
 
     await User.rememberMeTokens.create(user, '20 mins')
-    await User.rememberMeTokens.create(user)
+    await User.rememberMeTokens.create(user, '2 years')
     timeTravel(21 * 60)
     const tokens = await User.rememberMeTokens.all(user)
 
@@ -506,7 +469,7 @@ test.group('RememberMe tokens provider | DB | recycle', () => {
     })
 
     const token = await User.rememberMeTokens.create(user, '20 mins')
-    const freshToken = await User.rememberMeTokens.recycle(user, token.identifier)
+    const freshToken = await User.rememberMeTokens.recycle(user, token.identifier, '20 mins')
 
     assert.isNull(await User.rememberMeTokens.find(user, token.identifier))
     assert.isNotNull(await User.rememberMeTokens.find(user, freshToken.identifier))

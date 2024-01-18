@@ -211,9 +211,9 @@ export interface AccessTokensUserProviderContract<RealUser> {
   ): Promise<AccessToken>
 
   /**
-   * Find a user by their id.
+   * Find a user by the user id.
    */
-  findById(tokenableId: string | number | BigInt): Promise<AccessTokensGuardUser<RealUser> | null>
+  findById(identifier: string | number | BigInt): Promise<AccessTokensGuardUser<RealUser> | null>
 
   /**
    * Verify a token by its publicly shared value.

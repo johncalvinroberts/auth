@@ -10,23 +10,21 @@
 import { Secret } from '@adonisjs/core/helpers'
 import { RuntimeException } from '@adonisjs/core/exceptions'
 
-import { AccessToken } from '../access_token.js'
+import { RememberMeToken } from '../remember_me_token.js'
 import { PROVIDER_REAL_USER } from '../../../src/symbols.js'
 import type {
-  LucidTokenable,
-  AccessTokensGuardUser,
-  AccessTokensUserProviderContract,
-  AccessTokensLucidUserProviderOptions,
+  SessionGuardUser,
+  LucidAuthenticatable,
+  SessionLucidUserProviderOptions,
+  SessionUserProviderContract,
 } from '../types.js'
 
 /**
  * Uses a lucid model to verify access tokens and find a user during
  * authentication
  */
-export class AccessTokensLucidUserProvider<
-  TokenableProperty extends string,
-  UserModel extends LucidTokenable<TokenableProperty>,
-> implements AccessTokensUserProviderContract<InstanceType<UserModel>>
+export class SessionLucidUserProvider<UserModel extends LucidAuthenticatable>
+  implements SessionUserProviderContract<InstanceType<UserModel>>
 {
   declare [PROVIDER_REAL_USER]: InstanceType<UserModel>
 
@@ -39,7 +37,7 @@ export class AccessTokensLucidUserProvider<
     /**
      * Lucid provider options
      */
-    protected options: AccessTokensLucidUserProviderOptions<TokenableProperty, UserModel>
+    protected options: SessionLucidUserProviderOptions<UserModel>
   ) {}
 
   /**
@@ -62,13 +60,13 @@ export class AccessTokensLucidUserProvider<
   protected async getTokensProvider() {
     const model = await this.getModel()
 
-    if (!model[this.options.tokens]) {
+    if (!model.rememberMeTokens) {
       throw new RuntimeException(
-        `Cannot use "${model.name}" model for verifying access tokens. Make sure to assign a token provider to the model.`
+        `Cannot use "${model.name}" model for verifying remember me tokens. Make sure to assign a token provider to the model.`
       )
     }
 
-    return model[this.options.tokens]
+    return model.rememberMeTokens
   }
 
   /**
@@ -76,7 +74,7 @@ export class AccessTokensLucidUserProvider<
    */
   async createUserForGuard(
     user: InstanceType<UserModel>
-  ): Promise<AccessTokensGuardUser<InstanceType<UserModel>>> {
+  ): Promise<SessionGuardUser<InstanceType<UserModel>>> {
     const model = await this.getModel()
     if (user instanceof model === false) {
       throw new RuntimeException(
@@ -104,33 +102,11 @@ export class AccessTokensLucidUserProvider<
   }
 
   /**
-   * Create a token for a given user
-   */
-  async createToken(
-    user: InstanceType<UserModel>,
-    abilities?: string[] | undefined,
-    options?: {
-      name?: string
-      expiresIn?: string | number
-    }
-  ): Promise<AccessToken> {
-    const model = await this.getModel()
-    if (user instanceof model === false) {
-      throw new RuntimeException(
-        `Invalid user object. It must be an instance of the "${model.name}" model`
-      )
-    }
-
-    const tokensProvider = await this.getTokensProvider()
-    return tokensProvider.create(user, abilities, options)
-  }
-
-  /**
-   * Finds a user by the user id
+   * Finds a user by their primary key value
    */
   async findById(
     identifier: string | number | BigInt
-  ): Promise<AccessTokensGuardUser<InstanceType<UserModel>> | null> {
+  ): Promise<SessionGuardUser<InstanceType<UserModel>> | null> {
     const model = await this.getModel()
     const user = await model.find(identifier)
 
@@ -142,11 +118,44 @@ export class AccessTokensLucidUserProvider<
   }
 
   /**
-   * Verifies a publicly shared access token and returns an
-   * access token for it.
+   * Creates a remember token for a given user
    */
-  async verifyToken(tokenValue: Secret<string>): Promise<AccessToken | null> {
+  async createRememberToken(
+    user: InstanceType<UserModel>,
+    expiresIn: string | number
+  ): Promise<RememberMeToken> {
+    const tokensProvider = await this.getTokensProvider()
+    return tokensProvider.create(user, expiresIn)
+  }
+
+  /**
+   * Verify a token by its publicly shared value
+   */
+  async verifyRememberToken(tokenValue: Secret<string>): Promise<RememberMeToken | null> {
     const tokensProvider = await this.getTokensProvider()
     return tokensProvider.verify(tokenValue)
+  }
+
+  /**
+   * Delete a token for a user by the token identifier
+   */
+  async deleteRemeberToken(
+    user: InstanceType<UserModel>,
+    identifier: string | number | BigInt
+  ): Promise<number> {
+    const tokensProvider = await this.getTokensProvider()
+    return tokensProvider.delete(user, identifier)
+  }
+
+  /**
+   * Recycle a token for a user by the token identifier
+   */
+  async recycleRememberToken(
+    user: InstanceType<UserModel>,
+    identifier: string | number | BigInt,
+    expiresIn: string | number
+  ) {
+    const tokensProvider = await this.getTokensProvider()
+    return tokensProvider.recycle(user, identifier, expiresIn)
   }
 }
