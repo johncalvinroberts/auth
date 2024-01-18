@@ -27,7 +27,9 @@
     "./services/main": "./build/services/auth.js",
     "./initialize_auth_middleware": "./build/src/middleware/initialize_auth_middleware.js",
     "./access_tokens": "./build/modules/access_tokens_guard/main.js",
-    "./types/access_tokens": "./build/modules/access_tokens_guard/types.js"
+    "./types/access_tokens": "./build/modules/access_tokens_guard/types.js",
+    "./session": "./build/modules/session_guard/main.js",
+    "./types/session": "./build/modules/session_guard/types.js"
   },
   "scripts": {
     "pretest": "npm run lint",

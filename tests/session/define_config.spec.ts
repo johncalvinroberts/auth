@@ -15,13 +15,8 @@ import type { ApplicationService } from '@adonisjs/core/types'
 import { HttpContextFactory } from '@adonisjs/core/factories/http'
 
 import { createEmitter } from '../helpers.js'
-import {
-  tokensGuard,
-  AccessTokensGuard,
-  tokensUserProvider,
-  DbAccessTokensProvider,
-  AccessTokensLucidUserProvider,
-} from '../../modules/access_tokens_guard/main.js'
+import { SessionGuard, SessionLucidUserProvider } from '../../modules/session_guard/main.js'
+import { sessionGuard, sessionUserProvider } from '../../modules/session_guard/define_config.js'
 
 test.group('defineConfig', () => {
   test('configure lucid user provider', ({ assert, expectTypeOf }) => {
@@ -37,25 +32,20 @@ test.group('defineConfig', () => {
 
       @column()
       declare password: string
-
-      static authTokens = DbAccessTokensProvider.forModel(User)
     }
 
-    const userProvider = tokensUserProvider({
-      tokens: 'authTokens',
+    const userProvider = sessionUserProvider({
       async model() {
         return {
           default: User,
         }
       },
     })
-    assert.instanceOf(userProvider, AccessTokensLucidUserProvider)
-    expectTypeOf(userProvider).toEqualTypeOf<
-      AccessTokensLucidUserProvider<'authTokens', typeof User>
-    >()
+    assert.instanceOf(userProvider, SessionLucidUserProvider)
+    expectTypeOf(userProvider).toEqualTypeOf<SessionLucidUserProvider<typeof User>>()
   })
 
-  test('configure access tokens guard', async ({ assert, expectTypeOf }) => {
+  test('configure session guard', async ({ assert, expectTypeOf }) => {
     class User extends BaseModel {
       @column({ isPrimary: true })
       declare id: number
@@ -68,8 +58,6 @@ test.group('defineConfig', () => {
 
       @column()
       declare password: string
-
-      static authTokens = DbAccessTokensProvider.forModel(User)
     }
 
     const ctx = new HttpContextFactory().create()
@@ -77,9 +65,9 @@ test.group('defineConfig', () => {
     await app.init()
     app.container.bind('emitter', () => createEmitter())
 
-    const guard = await tokensGuard({
-      provider: tokensUserProvider({
-        tokens: 'authTokens',
+    const guard = await sessionGuard({
+      useRememberMeTokens: false,
+      provider: sessionUserProvider({
         async model() {
           return {
             default: User,
@@ -88,9 +76,49 @@ test.group('defineConfig', () => {
       }),
     }).resolver('api', app)
 
-    assert.instanceOf(guard(ctx), AccessTokensGuard)
+    assert.instanceOf(guard(ctx), SessionGuard)
     expectTypeOf(guard).returns.toEqualTypeOf<
-      AccessTokensGuard<AccessTokensLucidUserProvider<'authTokens', typeof User>>
+      SessionGuard<false, SessionLucidUserProvider<typeof User>>
+    >()
+  })
+
+  test('configure session guard and enable remember me tokens', async ({
+    assert,
+    expectTypeOf,
+  }) => {
+    class User extends BaseModel {
+      @column({ isPrimary: true })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+
+      @column()
+      declare password: string
+    }
+
+    const ctx = new HttpContextFactory().create()
+    const app = new AppFactory().create(new URL('./', import.meta.url)) as ApplicationService
+    await app.init()
+    app.container.bind('emitter', () => createEmitter())
+
+    const guard = await sessionGuard({
+      useRememberMeTokens: true,
+      provider: sessionUserProvider({
+        async model() {
+          return {
+            default: User,
+          }
+        },
+      }),
+    }).resolver('api', app)
+
+    assert.instanceOf(guard(ctx), SessionGuard)
+    expectTypeOf(guard).returns.toEqualTypeOf<
+      SessionGuard<true, SessionLucidUserProvider<typeof User>>
     >()
   })
 
@@ -107,8 +135,6 @@ test.group('defineConfig', () => {
 
       @column()
       declare password: string
-
-      static authTokens = DbAccessTokensProvider.forModel(User)
     }
 
     const ctx = new HttpContextFactory().create()
@@ -117,8 +143,7 @@ test.group('defineConfig', () => {
     app.container.bind('emitter', () => createEmitter())
 
     const userProvider = configProvider.create(async () => {
-      return tokensUserProvider({
-        tokens: 'authTokens',
+      return sessionUserProvider({
         async model() {
           return {
             default: User,
@@ -126,11 +151,15 @@ test.group('defineConfig', () => {
         },
       })
     })
-    const guard = await tokensGuard({ provider: userProvider }).resolver('api', app)
 
-    assert.instanceOf(guard(ctx), AccessTokensGuard)
+    const guard = await sessionGuard({
+      useRememberMeTokens: false,
+      provider: userProvider,
+    }).resolver('api', app)
+
+    assert.instanceOf(guard(ctx), SessionGuard)
     expectTypeOf(guard).returns.toEqualTypeOf<
-      AccessTokensGuard<AccessTokensLucidUserProvider<'authTokens', typeof User>>
+      SessionGuard<false, SessionLucidUserProvider<typeof User>>
     >()
   })
 })
