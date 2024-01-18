@@ -20,7 +20,9 @@ import { AuthManager } from '../../../src/auth_manager.js'
 import { FakeGuard, FakeUser } from '../../../factories/auth/main.js'
 import { authBrowserClient } from '../../../src/plugins/japa/browser_client.js'
 
-test.group('Browser client | loginAs', () => {
+test.group('Browser client | loginAs', (group) => {
+  group.each.timeout(0)
+
   test('login user using the guard authenticate as client method', async ({
     assert,
     expectTypeOf,

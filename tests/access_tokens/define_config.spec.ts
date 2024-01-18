@@ -15,8 +15,9 @@ import { HttpContextFactory } from '@adonisjs/core/factories/http'
 
 import { createEmitter } from '../helpers.js'
 import {
-  accessTokens,
+  tokensGuard,
   AccessTokensGuard,
+  tokensUserProvider,
   DbAccessTokensProvider,
   AccessTokensLucidUserProvider,
 } from '../../modules/access_tokens_guard/main.js'
@@ -40,7 +41,7 @@ test.group('defineConfig', () => {
       static authTokens = DbAccessTokensProvider.forModel(User)
     }
 
-    const userProvider = accessTokens.lucidUserProvider({
+    const userProvider = tokensUserProvider({
       tokens: 'authTokens',
       async model() {
         return {
@@ -76,18 +77,16 @@ test.group('defineConfig', () => {
     await app.init()
     app.container.bind('emitter', () => createEmitter())
 
-    const guard = await accessTokens
-      .guard(
-        accessTokens.lucidUserProvider({
-          tokens: 'authTokens',
-          async model() {
-            return {
-              default: User,
-            }
-          },
-        })
-      )
-      .resolver('api', app)
+    const guard = await tokensGuard({
+      provider: tokensUserProvider({
+        tokens: 'authTokens',
+        async model() {
+          return {
+            default: User,
+          }
+        },
+      }),
+    }).resolver('api', app)
 
     assert.instanceOf(guard(ctx), AccessTokensGuard)
     expectTypeOf(guard).returns.toEqualTypeOf<
@@ -118,7 +117,7 @@ test.group('defineConfig', () => {
     app.container.bind('emitter', () => createEmitter())
 
     const userProvider = configProvider.create(async () => {
-      return accessTokens.lucidUserProvider({
+      return tokensUserProvider({
         tokens: 'authTokens',
         async model() {
           return {
@@ -127,7 +126,7 @@ test.group('defineConfig', () => {
         },
       })
     })
-    const guard = await accessTokens.guard(userProvider).resolver('api', app)
+    const guard = await tokensGuard({ provider: userProvider }).resolver('api', app)
 
     assert.instanceOf(guard(ctx), AccessTokensGuard)
     expectTypeOf(guard).returns.toEqualTypeOf<

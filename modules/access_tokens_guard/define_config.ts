@@ -22,13 +22,16 @@ import type {
 /**
  * Configures access tokens guard for authentication
  */
-export function tokensGuard<UserProvider extends AccessTokensUserProviderContract<unknown>>(
-  userProvider: UserProvider | ConfigProvider<UserProvider>
-): GuardConfigProvider<(ctx: HttpContext) => AccessTokensGuard<UserProvider>> {
+export function tokensGuard<
+  UserProvider extends AccessTokensUserProviderContract<unknown>,
+>(config: {
+  provider: UserProvider | ConfigProvider<UserProvider>
+}): GuardConfigProvider<(ctx: HttpContext) => AccessTokensGuard<UserProvider>> {
   return {
     async resolver(name, app) {
       const emitter = await app.container.make('emitter')
-      const provider = 'resolver' in userProvider ? await userProvider.resolver(app) : userProvider
+      const provider =
+        'resolver' in config.provider ? await config.provider.resolver(app) : config.provider
       return (ctx) => new AccessTokensGuard(name, ctx, emitter as any, provider)
     },
   }
