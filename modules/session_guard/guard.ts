@@ -163,6 +163,8 @@ export class SessionGuard<
   #authenticationFailed(sessionId: string) {
     this.isAuthenticated = false
     this.viaRemember = false
+    this.user = undefined
+    this.isLoggedOut = false
 
     const error = new E_UNAUTHORIZED_ACCESS('Invalid or expired user session', {
       guardDriverName: this.driverName,
@@ -187,12 +189,33 @@ export class SessionGuard<
     user: UserProvider[typeof PROVIDER_REAL_USER],
     rememberMeToken?: RememberMeToken
   ) {
-    this.user = user
     this.isAuthenticated = true
-    this.isLoggedOut = false
     this.viaRemember = !!rememberMeToken
+    this.user = user
+    this.isLoggedOut = false
 
     this.#emitter.emit('session_auth:authentication_succeeded', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      sessionId,
+      user,
+      rememberMeToken,
+    })
+  }
+
+  /**
+   * Emits the login succeeded event and updates the login
+   * state
+   */
+  #loginSucceeded(
+    sessionId: string,
+    user: UserProvider[typeof PROVIDER_REAL_USER],
+    rememberMeToken?: RememberMeToken
+  ) {
+    this.user = user
+    this.isLoggedOut = false
+
+    this.#emitter.emit('session_auth:login_succeeded', {
       ctx: this.#ctx,
       guardName: this.#name,
       sessionId,
@@ -269,25 +292,28 @@ export class SessionGuard<
     }
 
     /**
+     * Recycle remember token and the remember me cookie
+     */
+    const recycledToken = await userProvider.recycleRememberToken(
+      providerUser.getOriginal(),
+      token.identifier,
+      this.#options.rememberMeTokensAge
+    )
+
+    /**
+     * Persist remember token inside the cookie
+     */
+    this.#createRememberMeCookie(recycledToken.value!)
+
+    /**
      * Create session
      */
-    const userId = providerUser.getId()
-    this.#createSessionForUser(userId)
+    this.#createSessionForUser(providerUser.getId())
 
     /**
      * Emit event and update local state
      */
     this.#authenticationSucceeded(sessionId, providerUser.getOriginal(), token)
-
-    /**
-     * Recycle remember token and the remember me cookie
-     */
-    const recycledToken = await userProvider.recycleRememberToken(
-      this.user!,
-      token.identifier,
-      this.#options.rememberMeTokensAge
-    )
-    this.#createRememberMeCookie(recycledToken.value!)
 
     return this.user!
   }
@@ -304,6 +330,121 @@ export class SessionGuard<
     }
 
     return this.user
+  }
+
+  /**
+   * Login user using sessions. Optionally, you can also create
+   * a remember me token to automatically login user when their
+   * session expires.
+   */
+  async login(user: UserProvider[typeof PROVIDER_REAL_USER], remember: boolean = false) {
+    const session = this.#getSession()
+    const providerUser = await this.#userProvider.createUserForGuard(user)
+
+    this.#emitter.emit('session_auth:login_attempted', {
+      ctx: this.#ctx,
+      user,
+      guardName: this.#name,
+    })
+
+    /**
+     * Create remember me token and persist it with the provider
+     * when remember me token is true.
+     */
+    let token: RememberMeToken | undefined
+    if (remember) {
+      if (!this.#options.useRememberMeTokens) {
+        throw new RuntimeException('Cannot use "rememberMe" feature. It has been disabled')
+      }
+
+      /**
+       * Here we assume the userProvider has implemented APIs to manage remember
+       * me tokens, since the "useRememberMeTokens" flag is enabled.
+       */
+      const userProvider = this.#userProvider as SessionWithTokensUserProviderContract<
+        UserProvider[typeof PROVIDER_REAL_USER]
+      >
+
+      token = await userProvider.createRememberToken(
+        providerUser.getOriginal(),
+        this.#options.rememberMeTokensAge
+      )
+    }
+
+    /**
+     * Persist remember token inside the cookie (if exists)
+     * Otherwise remove the cookie
+     */
+    if (token) {
+      this.#createRememberMeCookie(token.value!)
+    } else {
+      this.#ctx.response.clearCookie(this.rememberMeKeyName)
+    }
+
+    /**
+     * Create session
+     */
+    this.#createSessionForUser(providerUser.getId())
+
+    /**
+     * Mark user as logged-in
+     */
+    this.#loginSucceeded(session.sessionId, providerUser.getOriginal(), token)
+  }
+
+  /**
+   * Logout a user by removing its state from the session
+   * store and delete the remember me cookie (if any).
+   */
+  async logout() {
+    const session = this.#getSession()
+    const rememberMeCookie = this.#ctx.request.encryptedCookie(this.rememberMeKeyName)
+
+    /**
+     * Clear client side state
+     */
+    session.forget(this.sessionKeyName)
+    this.#ctx.response.clearCookie(this.rememberMeKeyName)
+
+    /**
+     * Delete remember me token when
+     *
+     * - Tokens are enabled
+     * - A cookie exists
+     * - And we know about the user already
+     */
+    if (this.user && rememberMeCookie && this.#options.useRememberMeTokens) {
+      /**
+       * Here we assume the userProvider has implemented APIs to manage remember
+       * me tokens, since the "useRememberMeTokens" flag is enabled.
+       */
+      const userProvider = this.#userProvider as SessionWithTokensUserProviderContract<
+        UserProvider[typeof PROVIDER_REAL_USER]
+      >
+
+      const token = await userProvider.verifyRememberToken(new Secret(rememberMeCookie))
+      if (token) {
+        await userProvider.deleteRemeberToken(this.user, token.identifier)
+      }
+    }
+
+    /**
+     * Update local state
+     */
+    this.user = undefined
+    this.viaRemember = false
+    this.isAuthenticated = false
+    this.isLoggedOut = true
+
+    /**
+     * Notify the user has been logged out
+     */
+    this.#emitter.emit('session_auth:logged_out', {
+      ctx: this.#ctx,
+      guardName: this.#name,
+      user: this.user || null,
+      sessionId: session.sessionId,
+    })
   }
 
   /**

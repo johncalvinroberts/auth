@@ -7,6 +7,10 @@
  * file that was distributed with this source code.
  */
 
+import { Secret } from '@adonisjs/core/helpers'
+import { setTimeout } from 'node:timers/promises'
+import stringHelpers from '@adonisjs/core/helpers/string'
+
 import { PROVIDER_REAL_USER } from '../../src/symbols.js'
 import {
   RememberMeTokenDbColumns,
@@ -14,8 +18,6 @@ import {
   SessionWithTokensUserProviderContract,
 } from '../../modules/session_guard/types.js'
 import { RememberMeToken } from '../../modules/session_guard/remember_me_token.js'
-import stringHelpers from '@adonisjs/core/helpers/string'
-import { Secret } from '@adonisjs/core/helpers'
 
 /**
  * Representation of a fake user used to test
@@ -177,6 +179,7 @@ export class SessionFakeUserWithTokensProvider
     expiresIn: string | number
   ): Promise<RememberMeToken> {
     await this.deleteRemeberToken(user, tokenIdentifier)
+    await setTimeout(100)
     return this.createRememberToken(user, expiresIn)
   }
 }
