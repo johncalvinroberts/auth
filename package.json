@@ -60,7 +60,7 @@
     "url": "https://github.com/adonisjs/auth/issues"
   },
   "devDependencies": {
-    "@adonisjs/assembler": "^7.0.0",
+    "@adonisjs/assembler": "^7.1.0",
     "@adonisjs/core": "^6.2.0",
     "@adonisjs/eslint-config": "^1.2.1",
     "@adonisjs/i18n": "^2.0.0",
@@ -136,7 +136,7 @@
     ]
   },
   "dependencies": {
-    "@adonisjs/presets": "^2.1.1",
+    "@adonisjs/presets": "^2.2.0",
     "basic-auth": "^2.0.1"
   },
   "peerDependencies": {
