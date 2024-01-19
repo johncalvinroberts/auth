@@ -9,7 +9,8 @@ coverage
 *.log
 build
 dist
-package-lock.json
 yarn.lock
 shrinkwrap.yaml
+package-lock.json
 test/__app
+backup
