@@ -73,6 +73,13 @@ export function withAuthFinder(
         uid: string,
         password: string
       ) {
+        /**
+         * Fail when uid or the password are missing
+         */
+        if (!uid || !password) {
+          throw new E_INVALID_CREDENTIALS('Invalid user credentials')
+        }
+
         const user = await this.findForAuth(options.uids, uid)
         if (!user) {
           await hash.make(password)

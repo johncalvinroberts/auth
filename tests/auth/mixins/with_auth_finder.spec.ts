@@ -291,4 +291,36 @@ test.group('withAuthFinder | verify', () => {
     assert.isBelow(Math.abs(invalidPasswordTime.seconds - invalidEmailTime.seconds), 1)
     assert.isBelow(Math.abs(invalidPasswordTime.milliseconds - invalidEmailTime.milliseconds), 10)
   })
+
+  test('throw error when uid or password values are missing', async ({ assert }) => {
+    const db = await createDatabase()
+    await createTables(db)
+
+    const hash = getHasher()
+
+    class User extends compose(
+      BaseModel,
+      withAuthFinder(hash, {
+        uids: ['email', 'username'],
+        passwordColumnName: 'password',
+      })
+    ) {
+      @column({ isPrimary: true })
+      declare id: number
+
+      @column()
+      declare username: string
+
+      @column()
+      declare email: string
+
+      @column()
+      declare password: string
+    }
+
+    await assert.rejects(
+      () => User.verifyCredentials('virk@adonisjs.com', ''),
+      'Invalid user credentials'
+    )
+  })
 })
