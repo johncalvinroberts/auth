@@ -20,7 +20,7 @@ jobs:
       postgres:
         image: postgres:${{ matrix.postgres-version }}
         env:
-          POSTGRES_DB: lucid
+          POSTGRES_DB: auth
           POSTGRES_USER: virk
           POSTGRES_PASSWORD: secret
         ports:
@@ -46,7 +46,7 @@ jobs:
       mysql:
         image: mysql:${{ matrix.mysql.version }}
         env:
-          MYSQL_DATABASE: lucid
+          MYSQL_DATABASE: auth
           MYSQL_USER: virk
           MYSQL_PASSWORD: secret
           MYSQL_ROOT_PASSWORD: secret
