@@ -113,7 +113,7 @@ test.group('RememberMe tokens provider | DB | create', () => {
 })
 
 test.group('RememberMe tokens provider | DB | verify', () => {
-  test('return access token when token value is valid', async ({ assert }) => {
+  test('return remember me token when token value is valid', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
 
@@ -145,8 +145,8 @@ test.group('RememberMe tokens provider | DB | verify', () => {
     assert.instanceOf(freshToken, RememberMeToken)
     assert.isUndefined(freshToken!.value)
     assert.equal(freshToken!.hash, token.hash)
-    assert.equal(freshToken!.createdAt.getTime(), token.createdAt.getTime())
-    assert.equal(freshToken!.expiresAt.getTime(), token.expiresAt.getTime())
+    assert.closeTo(freshToken!.createdAt.getTime(), token.createdAt.getTime(), 10)
+    assert.closeTo(freshToken!.expiresAt.getTime(), token.expiresAt.getTime(), 10)
   })
 
   test('return null when token has been expired', async ({ assert }) => {
@@ -314,7 +314,7 @@ test.group('RememberMe tokens provider | DB | find', () => {
     assert.isUndefined(freshToken!.value)
   })
 
-  test('get expired tokens as well', async ({ assert }) => {
+  test('return expired tokens as well', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
 
@@ -355,7 +355,7 @@ test.group('RememberMe tokens provider | DB | find', () => {
     assert.isTrue(freshToken!.isExpired())
   })
 
-  test('get null when token is missing', async ({ assert }) => {
+  test('return null when token is missing', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
 
@@ -381,7 +381,7 @@ test.group('RememberMe tokens provider | DB | find', () => {
       password: 'secret',
     })
 
-    const freshToken = await User.rememberMeTokens.find(user, 'foo')
+    const freshToken = await User.rememberMeTokens.find(user, 2)
     assert.isNull(freshToken)
   })
 })

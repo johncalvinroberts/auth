@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import { inspect } from 'node:util'
 import type { Secret } from '@adonisjs/core/helpers'
 import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
@@ -68,6 +69,13 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
     this.tokenSecretLength = options.tokenSecretLength || 40
     this.type = options.type || 'auth_token'
     this.prefix = options.prefix || 'oat_'
+  }
+
+  /**
+   * Check if value is an object
+   */
+  #isObject(value: unknown) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
   }
 
   /**
@@ -164,7 +172,18 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
     /**
      * Insert data to the database.
      */
-    const [id] = await queryClient.table(this.table).insert(dbRow)
+    const result = await queryClient.table(this.table).insert(dbRow).returning('id')
+    const id = this.#isObject(result[0]) ? result[0].id : result[0]
+
+    /**
+     * Throw error when unable to find id in the return value of
+     * the insert query
+     */
+    if (!id) {
+      throw new RuntimeException(
+        `Cannot save access token. The result "${inspect(result)}" of insert query is unexpected`
+      )
+    }
 
     /**
      * Convert db row to an access token
@@ -237,7 +256,24 @@ export class DbAccessTokensProvider<TokenableModel extends LucidModel>
       .query<AccessTokenDbColumns>()
       .from(this.table)
       .where({ tokenable_id: user.$primaryKeyValue, type: this.type })
-      .orderBy('last_used_at', 'desc')
+      .ifDialect('postgres', (query) => {
+        query.orderBy([
+          {
+            column: 'last_used_at',
+            order: 'desc',
+            nulls: 'last',
+          },
+        ])
+      })
+      .unlessDialect('postgres', (query) => {
+        query.orderBy([
+          {
+            column: 'last_used_at',
+            order: 'asc',
+            nulls: 'last',
+          },
+        ])
+      })
       .orderBy('id', 'desc')
       .exec()
 

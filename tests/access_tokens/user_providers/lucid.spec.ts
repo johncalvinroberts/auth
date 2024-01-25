@@ -93,7 +93,7 @@ test.group('Access tokens user provider | Lucid | verify', () => {
     assert.isUndefined(freshToken!.value)
     assert.equal(freshToken!.type, token.type)
     assert.equal(freshToken!.hash, token.hash)
-    assert.equal(freshToken!.createdAt.getTime(), token.createdAt.getTime())
+    assert.closeTo(freshToken!.createdAt.getTime(), token.createdAt.getTime(), 10)
     assert.instanceOf(freshToken!.lastUsedAt, Date)
   })
 })

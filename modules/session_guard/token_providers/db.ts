@@ -7,6 +7,7 @@
  * file that was distributed with this source code.
  */
 
+import { inspect } from 'node:util'
 import type { Secret } from '@adonisjs/core/helpers'
 import { RuntimeException } from '@adonisjs/core/exceptions'
 import type { LucidModel } from '@adonisjs/lucid/types/model'
@@ -54,6 +55,13 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
   constructor(protected options: DbRememberMeTokensProviderOptions<TokenableModel>) {
     this.table = options.table || 'remember_me_tokens'
     this.tokenSecretLength = options.tokenSecretLength || 40
+  }
+
+  /**
+   * Check if value is an object
+   */
+  #isObject(value: unknown) {
+    return value !== null && typeof value === 'object' && !Array.isArray(value)
   }
 
   /**
@@ -134,7 +142,18 @@ export class DbRememberMeTokensProvider<TokenableModel extends LucidModel>
     /**
      * Insert data to the database.
      */
-    const [id] = await queryClient.table(this.table).insert(dbRow)
+    const result = await queryClient.table(this.table).insert(dbRow).returning('id')
+    const id = this.#isObject(result[0]) ? result[0].id : result[0]
+
+    /**
+     * Throw error when unable to find id in the return value of
+     * the insert query
+     */
+    if (!id) {
+      throw new RuntimeException(
+        `Cannot save access token. The result "${inspect(result)}" of insert query is unexpected`
+      )
+    }
 
     /**
      * Convert db row to a remember token

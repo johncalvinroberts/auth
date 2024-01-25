@@ -10,6 +10,7 @@
 import { join } from 'node:path'
 import timekeeper from 'timekeeper'
 import { Hash } from '@adonisjs/hash'
+import { configDotenv } from 'dotenv'
 import { mkdir } from 'node:fs/promises'
 import { getActiveTest } from '@japa/runner'
 import { Emitter } from '@adonisjs/core/events'
@@ -24,6 +25,7 @@ import setCookieParser, { type CookieMap } from 'set-cookie-parser'
 import { EncryptionFactory } from '@adonisjs/core/factories/encryption'
 
 export const encryption: Encryption = new EncryptionFactory().create()
+configDotenv()
 
 /**
  * Creates a fresh instance of AdonisJS hash module
@@ -49,12 +51,45 @@ export async function createDatabase() {
   const emitter = new Emitter(app)
   const db = new Database(
     {
-      connection: 'primary',
+      connection: process.env.DB || 'sqlite',
       connections: {
-        primary: {
+        sqlite: {
           client: 'sqlite3',
           connection: {
             filename: join(test.context.fs.basePath, 'db.sqlite3'),
+          },
+        },
+        pg: {
+          client: 'pg',
+          connection: {
+            host: process.env.PG_HOST as string,
+            port: Number(process.env.PG_PORT),
+            database: process.env.PG_DATABASE as string,
+            user: process.env.PG_USER as string,
+            password: process.env.PG_PASSWORD as string,
+          },
+        },
+        mssql: {
+          client: 'mssql',
+          connection: {
+            server: process.env.MSSQL_HOST as string,
+            port: Number(process.env.MSSQL_PORT! as string),
+            user: process.env.MSSQL_USER as string,
+            password: process.env.MSSQL_PASSWORD as string,
+            database: 'master',
+            options: {
+              enableArithAbort: true,
+            },
+          },
+        },
+        mysql: {
+          client: 'mysql2',
+          connection: {
+            host: process.env.MYSQL_HOST as string,
+            port: Number(process.env.MYSQL_PORT),
+            database: process.env.MYSQL_DATABASE as string,
+            user: process.env.MYSQL_USER as string,
+            password: process.env.MYSQL_PASSWORD as string,
           },
         },
       },
@@ -86,14 +121,14 @@ export async function createTables(db: Database) {
   await db.connection().schema.createTable('auth_access_tokens', (table) => {
     table.increments()
     table.integer('tokenable_id').notNullable().unsigned()
-    table.integer('type').notNullable()
+    table.string('type').notNullable()
     table.string('name').nullable()
     table.string('hash', 80).notNullable()
-    table.json('abilities').notNullable()
-    table.timestamp('created_at').notNullable()
-    table.timestamp('updated_at').notNullable()
-    table.timestamp('expires_at').nullable()
-    table.timestamp('last_used_at').nullable()
+    table.text('abilities').notNullable()
+    table.timestamp('created_at', { precision: 6, useTz: true }).notNullable()
+    table.timestamp('updated_at', { precision: 6, useTz: true }).notNullable()
+    table.timestamp('expires_at', { precision: 6, useTz: true }).nullable()
+    table.timestamp('last_used_at', { precision: 6, useTz: true }).nullable()
   })
 
   await db.connection().schema.createTable('users', (table) => {
@@ -107,9 +142,9 @@ export async function createTables(db: Database) {
     table.increments()
     table.integer('tokenable_id').notNullable().unsigned()
     table.string('hash', 80).notNullable()
-    table.timestamp('created_at').notNullable()
-    table.timestamp('updated_at').notNullable()
-    table.timestamp('expires_at').notNullable()
+    table.timestamp('created_at', { precision: 6, useTz: true }).notNullable()
+    table.timestamp('updated_at', { precision: 6, useTz: true }).notNullable()
+    table.timestamp('expires_at', { precision: 6, useTz: true }).notNullable()
   })
 }
 

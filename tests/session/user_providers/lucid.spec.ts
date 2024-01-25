@@ -299,7 +299,7 @@ test.group('Session user provider | Lucid | verifyToken', () => {
     assert.instanceOf(freshToken, RememberMeToken)
     assert.isUndefined(freshToken!.value)
     assert.equal(freshToken!.hash, token.hash)
-    assert.equal(freshToken!.createdAt.getTime(), token.createdAt.getTime())
+    assert.closeTo(freshToken!.createdAt.getTime(), token.createdAt.getTime(), 10)
   })
 })
 

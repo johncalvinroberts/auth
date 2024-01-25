@@ -321,7 +321,7 @@ test.group('Access tokens provider | DB | verify', () => {
     assert.equal(freshToken!.type, token.type)
     assert.equal(freshToken!.hash, token.hash)
     assert.equal(freshToken!.name, 'List projects')
-    assert.equal(freshToken!.createdAt.getTime(), token.createdAt.getTime())
+    assert.closeTo(freshToken!.createdAt.getTime(), token.createdAt.getTime(), 10)
     assert.instanceOf(freshToken!.lastUsedAt, Date)
   })
 
@@ -528,7 +528,7 @@ test.group('Access tokens provider | DB | find', () => {
     assert.isUndefined(freshToken!.value)
   })
 
-  test('get expired tokens as well', async ({ assert }) => {
+  test('return expired tokens as well', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
 
@@ -576,7 +576,7 @@ test.group('Access tokens provider | DB | find', () => {
     assert.isTrue(freshToken!.isExpired())
   })
 
-  test('get null when token is missing', async ({ assert }) => {
+  test('return null when token is missing', async ({ assert }) => {
     const db = await createDatabase()
     await createTables(db)
 
@@ -602,7 +602,7 @@ test.group('Access tokens provider | DB | find', () => {
       password: 'secret',
     })
 
-    const freshToken = await User.authTokens.find(user, 'foo')
+    const freshToken = await User.authTokens.find(user, 2)
     assert.isNull(freshToken)
   })
 })
