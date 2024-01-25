@@ -9,7 +9,32 @@
 
 import type { HttpContext } from '@adonisjs/core/http'
 import type { Exception } from '@adonisjs/core/exceptions'
+import type { LucidModel } from '@adonisjs/lucid/types/model'
 import type { PROVIDER_REAL_USER } from '../../src/symbols.js'
+
+/**
+ * A lucid model with verify credentials method to verify user
+ * credentials during authentication.
+ */
+export type LucidAuthenticatable = LucidModel & {
+  /**
+   * Verify credentials method should return the user instance
+   * or throw an exception
+   */
+  verifyCredentials(uid: string, password: string): Promise<InstanceType<LucidAuthenticatable>>
+}
+
+/**
+ * Options accepted by the user provider that uses a lucid
+ * model to lookup a user during authentication and verify
+ * credentials
+ */
+export type BasicAuthLucidUserProviderOptions<Model extends LucidAuthenticatable> = {
+  /**
+   * The model to use for users lookup
+   */
+  model: () => Promise<{ default: Model }>
+}
 
 /**
  * Guard user is an adapter between the user provider

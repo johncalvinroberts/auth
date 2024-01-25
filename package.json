@@ -28,7 +28,7 @@
   },
   "scripts": {
     "pretest": "npm run lint",
-    "test": "c8 npm run test:sqlite && npm run test:mysql && npm run test:pg && npm run test:mssql",
+    "test": "npm run test:mysql && npm run test:pg && npm run test:mssql && c8 npm run test:sqlite",
     "test:sqlite": "npm run quick:test",
     "test:mysql": "cross-env DB=mysql npm run quick:test",
     "test:mssql": "cross-env DB=mssql npm run quick:test",
