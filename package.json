@@ -24,7 +24,9 @@
     "./access_tokens": "./build/modules/access_tokens_guard/main.js",
     "./types/access_tokens": "./build/modules/access_tokens_guard/types.js",
     "./session": "./build/modules/session_guard/main.js",
-    "./types/session": "./build/modules/session_guard/types.js"
+    "./types/session": "./build/modules/session_guard/types.js",
+    "./basic_auth": "./build/modules/basic_auth_guard/main.js",
+    "./types/basic_auth": "./build/modules/basic_auth_guard/types.js"
   },
   "scripts": {
     "pretest": "npm run lint",
@@ -184,7 +186,9 @@
       "./modules/access_tokens_guard/main.ts",
       "./modules/access_tokens_guard/types.ts",
       "./modules/session_guard/main.ts",
-      "./modules/session_guard/types.ts"
+      "./modules/session_guard/types.ts",
+      "./modules/basic_auth_guard/main.ts",
+      "./modules/basic_auth_guard/types.ts"
     ],
     "outDir": "./build",
     "clean": true,
