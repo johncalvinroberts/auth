@@ -16,6 +16,10 @@ configure({
       files: ['tests/access_tokens/**/*.spec.ts'],
     },
     {
+      name: 'basic_auth',
+      files: ['tests/basic_auth/**/*.spec.ts'],
+    },
+    {
       name: 'auth',
       files: ['tests/auth/**/*.spec.ts'],
     },
