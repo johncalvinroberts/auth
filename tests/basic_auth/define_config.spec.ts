@@ -21,8 +21,6 @@ import {
   basicAuthGuard,
   basicAuthUserProvider,
 } from '../../modules/basic_auth_guard/define_config.js'
-import { SessionGuard, SessionLucidUserProvider } from '../../modules/session_guard/main.js'
-import { sessionGuard, sessionUserProvider } from '../../modules/session_guard/define_config.js'
 import { BasicAuthGuard, BasicAuthLucidUserProvider } from '../../modules/basic_auth_guard/main.js'
 
 test.group('defineConfig', () => {

@@ -93,7 +93,7 @@ export class BasicAuthLucidUserProvider<UserModel extends LucidAuthenticatable>
     const model = await this.getModel()
     try {
       const user = await model.verifyCredentials(uid, password)
-      return this.createUserForGuard(user)
+      return this.createUserForGuard(user as InstanceType<UserModel>)
     } catch {
       return null
     }
