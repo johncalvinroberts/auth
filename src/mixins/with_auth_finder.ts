@@ -14,7 +14,7 @@ import type { NormalizeConstructor } from '@adonisjs/core/types/helpers'
 import { E_INVALID_CREDENTIALS } from '../errors.js'
 
 /**
- * Mixing to add user lookup and password verification methods
+ * Mixin to add user lookup and password verification methods
  * on a model.
  *
  * Under the hood, this mixin defines following methods and hooks
